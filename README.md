@@ -33,7 +33,7 @@
     $ make
     ```
     
-# Start Server and clIENT
+# Start Server and Client
 
 - To start server, run:
     ```sh
