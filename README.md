@@ -1,14 +1,13 @@
 
-
 # VNC set up guild
 
 - Install Tiger vnc
-  --- MacOS :  
+    * MacOS :  
     ```sh
     $ brew cask install tigervnc-viewer
     ```
-    -- Windows: TBD
-    -- Linux: TBD
+    * Windows: TBD
+    * Linux: TBD
   
 - SSH into one of the ug machine and run:
     ```sh
@@ -16,12 +15,12 @@
     $ ece297vnc start
     ```
 - Follow the instruction in command window to start a VNC session:
-  -- eg: for Mac
-    On your local machine run:
+    eg: for **Mac**
+    1. On your local machine run:
     ```sh
     $ ssh -L 5901:127.0.0.1:5901 username@ugxxx.eecg.toronto.edu
     ```
-    Then open TigerVNC and connect to:
+    2. Then open TigerVNC and connect to:
     ```sh
     127.0.0.1:5901
     ```
@@ -33,7 +32,7 @@
     $ make
     ```
     
-# Start Server and Client
+# Start Server and clIENT
 
 - To start server, run:
     ```sh
