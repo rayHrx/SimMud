@@ -1,3 +1,49 @@
+
+# VNC set up guild
+
+- Install Tiger vnc
+    * MacOS :  
+    ```sh
+    $ brew cask install tigervnc-viewer
+    ```
+    * Windows: TBD
+    * Linux: TBD
+  
+- SSH into one of the ug machine and run:
+    ```sh
+    $ ssh username@ugxxx.eecg.toronto.edu
+    $ ece297vnc start
+    ```
+- Follow the instruction in command window to start a VNC session:
+    eg: for **Mac**
+    1. On your local machine run:
+    ```sh
+    $ ssh -L 5901:127.0.0.1:5901 username@ugxxx.eecg.toronto.edu
+    ```
+    2. Then open TigerVNC and connect to:
+    ```sh
+    127.0.0.1:5901
+    ```
+
+# Compile SimMud
+
+- Run make under the root directory
+    ```sh
+    $ make
+    ```
+    
+# Start Server and clIENT
+
+- To start server, run:
+    ```sh
+    $ ./server config_demo.ini 'port'
+    ```
+- To start client, run:
+    ```sh
+    $ ./client --gui 'server port'
+    ```
+# Original README
+
 1. BUILDING THE GAME FROM SOURCES
 
 Make sure all the needed libraries are installed:
