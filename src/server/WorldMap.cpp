@@ -2,7 +2,6 @@
 
 #include "WorldMap.h"
 
-
 void WorldMap::generate()
 {
 	int i, j;
@@ -255,6 +254,8 @@ void	WorldMap::rewardPlayers( Vector2D quest_pos )
 
 void WorldMap::reassignRegion( Region* r, int new_layout )
 {
+	if(r->layout == new_layout) return;
+
 	list<Player*>::iterator pi;			//iterator for players
 	
 	for ( pi = r->players.begin(); pi != r->players.end(); pi++ )
@@ -272,6 +273,42 @@ void WorldMap::balance_lightest()
 
 void WorldMap::balance_spread()
 {
+	std::vector<Region*> all_regions;
+	for(int i = 0; i < n_regs.x; ++i){
+		for(int j = 0; j < n_regs.y; ++j){
+			all_regions.push_back(&regions[i][j]);
+		}
+	}
+
+	// Sort non-increasing
+	std::sort(all_regions.begin(), all_regions.end(), [](Region* a, Region* b){
+		return a->players.size() > b->players.size();	
+	});
+
+	std::vector<int> bins(sd->num_threads, 0);
+	while(!all_regions.empty()){
+		auto min = std::min_element(bins.begin(), bins.end());
+		size_t lightest_layout;	
+		for(lightest_layout = 0; lightest_layout < bins.size(); ++ lightest_layout){
+			if(*min == bins[lightest_layout]) break;
+		}
+
+		// Fetch&pop next heaviest region
+		Region* heaviest_region = all_regions.back();
+		all_regions.pop_back();
+
+		if(heaviest_region->layout != lightest_layout){
+			reassignRegion(heaviest_region,lightest_layout);
+		}		
+		bins[lightest_layout] += heaviest_region->players.size();
+	}
+
+	//std::for_each(std::rbegin(bins), std::rend(bins), [](auto const& value) {
+    	//	printf("%d \n", value);
+	//});
+	//printf("================ \n");
+
+	return;
 }
 
 void WorldMap::balance()

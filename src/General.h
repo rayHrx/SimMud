@@ -42,6 +42,9 @@ or displayed as warnings
 #include <SDL.h>
 #include <SDL_thread.h>
 #include <SDL_net.h>
+#include <algorithm>
+#include <functional>
+#include <vector>
 
 /* My Headers */
 #include "Settings.h"
