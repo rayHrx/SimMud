@@ -280,9 +280,9 @@ void WorldMap::balance_spread()
 		}
 	}
 
-	// Sort non-increasing
+	// Sort increasing
 	std::sort(all_regions.begin(), all_regions.end(), [](Region* a, Region* b){
-		return a->players.size() > b->players.size();	
+		return a->players.size() < b->players.size();	
 	});
 
 	std::vector<int> bins(sd->num_threads, 0);
