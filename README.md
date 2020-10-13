@@ -1,3 +1,58 @@
+# Two load balancing algorithms to be implemented
+## 1 - Spread
+Spread is a dynamic load balancing algorithm that aims at optimizing
+the overall load balancing through a uniform load spread in
+the server network. Load shedding is triggered when the number
+of players exceeds a single-server’s capacity (in terms of CPU or
+bandwidth towards its clients) just as in our main dynamic partitioning
+algorithm.
+This algorithm, however, attempts to uniformly spread the players
+across all participating servers through global reshuffling of regions
+to servers. The algorithm is meant to be an extreme where
+the primary concern is the global optimum in terms of the smallest
+difference between the lowest and highest loaded server in the
+system. There are no attempts at locality preservation in either
+network proximity or region adjacency. The algorithm is a binpacking
+algorithm that needs global load information for all participating
+servers. The algorithm starts with one empty bin per server,
+then in successive steps takes a region that is currently mapped at
+any of the servers and places it in the bin with the current lightest
+load. This is done iteratively until all regions have been placed
+into bins. After the global reshuffle schedule is created, each bin is
+assigned to a particular server and the corresponding region migrations
+occur. While the algorithm could be adapted to include only
+a subset of servers (e.g., just neighbors and their neighbors) into
+the region reshuffle process, we currently involve all servers in this
+process.
+
+## 2 - Lightest
+Lightest is a dynamic load balancing algorithm that attempts to
+optimize the cost of remapping by prioritizing shedding load to a
+single server instead of several servers. The algorithm does not take
+network proximity in the game (i.e., to neighbors) into account.
+Furthermore, clustering of adjacent regions is maintained whenever
+possible but is of secondary concern compared to load shedding to
+a single server.
+An overloaded server tries to shed load directly to the lightest
+loaded node known. The precondition is that this node’s load has
+to be below Light load th. Note that our definition of Light load th
+is such that a single such node should be able to accommodate a
+sufficient load shed from an overloaded node. While this is true in
+most cases, depending on the actual distribution of players to regions,
+if some regions are more overloaded than others, a careful
+load shedding schedule should be constructed to maximize the load
+to be shed. The lightest loaded node may in fact be a neighbor, but
+the Lightest algorithm does not give preference to neighbors when
+shedding load except in case of load ties. Instead, the overloaded
+node prefers shedding a sufficient portion of its load to a single
+server even if this server is remote and even if this implies some
+declustering for the shedded regions. Regions of the overloaded
+node are scanned in-order and placed into a bin to be assigned to
+the lightly loaded node. Thus, Lightest attempts to keep region
+clusters together by scanning adjacent regions in sequence. On the
+other hand, if a region cannot be placed in the bin without exceeding
+the safe load threshold, a subsequent region is selected, hence
+sacrificing on region locality.
 
 # VNC set up guild
 
