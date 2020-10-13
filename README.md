@@ -5,7 +5,7 @@ the overall load balancing through a uniform load spread in
 the server network. Load shedding is triggered when the number
 of players exceeds a single-server’s capacity (in terms of CPU or
 bandwidth towards its clients) just as in our main dynamic partitioning
-algorithm.
+algorithm.\
 This algorithm, however, attempts to uniformly spread the players
 across all participating servers through global reshuffling of regions
 to servers. The algorithm is meant to be an extreme where
@@ -32,7 +32,7 @@ single server instead of several servers. The algorithm does not take
 network proximity in the game (i.e., to neighbors) into account.
 Furthermore, clustering of adjacent regions is maintained whenever
 possible but is of secondary concern compared to load shedding to
-a single server.
+a single server.\
 An overloaded server tries to shed load directly to the lightest
 loaded node known. The precondition is that this node’s load has
 to be below Light load th. Note that our definition of Light load th
