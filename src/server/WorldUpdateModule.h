@@ -23,8 +23,8 @@
 #include "../utils/SDL_barrier.h"
 #include "../comm/MessageQueue.h"
 #include "../comm/MessageModule.h"
-
-
+#include "../utils/MetricsTracker.h"
+#include "../utils/MetricsTracker.cpp"
 
 class WorldUpdateModule : public Module
 {
@@ -39,6 +39,12 @@ public:
 	double avg_wui;			// average_world_update_interval
 	double avg_rui;			// average_regular_update_interval
 
+	
+	MetricsTracker<int>* requests_number_tracker;
+	MetricsTracker<Uint32>* requests_time_tracker;
+
+	MetricsTracker<int>* updates_number_tracker;
+	MetricsTracker<Uint32>* updates_time_tracker;
 
 public:
 	/* Constructor and setup methods */

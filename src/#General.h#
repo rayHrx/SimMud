@@ -31,8 +31,6 @@ or displayed as warnings
 #include <string.h>
 #include <time.h>
 #include <assert.h>
-#include <sstream>
-#include <sys/stat.h>
 
 /* Windows headers */
 #ifdef WIN32
@@ -47,11 +45,6 @@ or displayed as warnings
 #include <algorithm>
 #include <functional>
 #include <vector>
-#include <list>
-#include <numeric>
-#include <chrono>
-#include <iostream>
-#include <fstream>
 
 /* My Headers */
 #include "Settings.h"

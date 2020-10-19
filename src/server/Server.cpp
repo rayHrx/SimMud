@@ -81,6 +81,8 @@ void init(int argc, char *argv[])
 
 void finish()
 {
+	
+
 	/* finish SDL */
 	SDLNet_Quit();
 	//SDL_Quit();
@@ -89,12 +91,65 @@ void finish()
 	delete sd;
 }
 
+void logPerformanceMetrics(WorldUpdateModule **wu_modules){
+	//std::chrono::system_clock::now()
+	printf("here");
+	string dir_name = string("test");
+	if(mkdir(dir_name.c_str(), 0777) == -1){
+		printf(strerror(errno));	
+	}
+	for(int i = 0; i < sd->num_threads; i++ ){
+		ofstream logFile;
+  		logFile.open(dir_name + "/" + to_string(i));	
+		
+		int iterations = wu_modules[i]->requests_number_tracker->getCalculatedAverages().size();
+		vector<string> rows(iterations + 1, "");
+		
+		int headerRow = 0;
+		auto module = wu_modules[i];		
+
+		auto t1 = module->requests_number_tracker;
+		auto t2 = module->requests_time_tracker;
+		auto t3 = module->updates_number_tracker;
+		auto t4 = module->updates_time_tracker;
+
+		rows[headerRow] += t1->getName() + " " + t2->getName() + " " + t3->getName() + " " + t4->getName();
+
+		auto t1Sample = t1->getCalculatedAverages();
+		auto t2Sample = t2->getCalculatedAverages();
+		auto t3Sample = t3->getCalculatedAverages();
+		auto t4Sample = t4->getCalculatedAverages();
+	
+		for(int i = 0 ; i < t1Sample.size(); ++ i){
+			rows[i + 1] += to_string(t1Sample[i]);
+		}
+		
+		for(int i = 0 ; i < t2Sample.size(); ++ i){
+			rows[i + 1] += "," + to_string(t2Sample[i]);
+		}
+			
+		for(int i = 0 ; i < t3Sample.size(); ++ i){
+			rows[i + 1] += "," + to_string(t3Sample[i]);
+		}
+			
+		for(int i = 0 ; i < t4Sample.size(); ++ i){
+			rows[i + 1] += "," + to_string(t4Sample[i]);
+		}
+			
+
+		for(auto row : rows){
+			logFile << row << "\n";		
+		}
+		logFile.close();
+	}
+}
+
 /***************************************************************************************************
 *
 * Main
 *
 ***************************************************************************************************/
-
+WorldUpdateModule **wu_module;
 int main(int argc, char *argv[])
 {
 	int i;
@@ -126,9 +181,12 @@ int main(int argc, char *argv[])
 		while ( true )
 		{			
 			scanf("%s", cmd);
-			if ( !strcmp(cmd, "exit") || !strcmp(cmd, "quit") || !strcmp(cmd, "q") )	exit(0);
+			if ( !strcmp(cmd, "exit") || !strcmp(cmd, "quit") || !strcmp(cmd, "q") ){
+				logPerformanceMetrics(wu_module);
+				exit(0);
+			}	
 		}		
-
+		logPerformanceMetrics(wu_module);
 		finish();
 
 	} catch ( const char *err ) {

@@ -35,7 +35,14 @@ WorldUpdateModule::WorldUpdateModule( int id, MessageModule *_comm, SDL_barrier 
 	
 	avg_wui = -1;
 	avg_rui = -1;
+
+	requests_number_tracker = new MetricsTracker<int>(1, "request_number");
+	requests_time_tracker = new MetricsTracker<Uint32>(5, "request_time");
+
+	updates_number_tracker = new MetricsTracker<int>(1, "update_number");
+	updates_time_tracker = new MetricsTracker<Uint32>(5, "update_time");
 	
+
 	assert( SDL_CreateThread( module_thread, (void*)this ) != NULL );
 }
 
@@ -72,8 +79,16 @@ void WorldUpdateModule::run()
 		start_time = SDL_GetTicks();
 		timeout	= sd->regular_update_interval;
 		
+		int requests = 0;
+		Uint32 processing_time = 0;
+		int updates = 0;
+		Uint32 updating_time = 0;
+	
         while( (m = comm->receive( timeout, t_id )) != NULL )
         {
+	    ++requests;
+	    Uint32 request_start_time = SDL_GetTicks();	
+		
             addr = m->getAddress();
             type = m->getType();
             p = sd->wm.findPlayer( addr, t_id );
@@ -103,7 +118,12 @@ void WorldUpdateModule::run()
             delete m;
             timeout = sd->regular_update_interval - (SDL_GetTicks() - start_time);
             if( ((int)timeout) < 0 )	timeout = 0;
+
+	    processing_time += (SDL_GetTicks() - request_start_time);
         }
+
+	requests_number_tracker->addSample(requests);
+	requests_time_tracker->addSample(processing_time);
         
         SDL_WaitBarrier(barrier);
         
@@ -141,6 +161,9 @@ void WorldUpdateModule::run()
 	    bucket->start();
 	    while ( ( p = bucket->next() ) != NULL )
 	    {
+		++updates;
+		Uint32 update_start_time = SDL_GetTicks();
+
 	    	ms = new MessageWithSerializator( MESSAGE_SC_REGULAR_UPDATE, t_id, p->address );	assert(ms);
 		    s = ms->getSerializator();															assert(s);
 		    
@@ -151,8 +174,13 @@ void WorldUpdateModule::run()
 	    	
 	    	if( sd->send_start_quest )		comm->send( new MessageXY(MESSAGE_SC_NEW_QUEST, t_id, p->address, sd->quest_pos), t_id );
 	    	if( sd->send_end_quest )		comm->send( new Message(MESSAGE_SC_QUEST_OVER, t_id, p->address), t_id );
+		
+		updating_time += (SDL_GetTicks() - update_start_time);
 	    }
 	
+	    updates_number_tracker->addSample(updates);
+    	    updates_time_tracker->addSample(updating_time);
+
 	    SDL_WaitBarrier(barrier);
 	    rui = SDL_GetTicks() - start_time;    
 	    avg_rui = ( avg_rui < 0 ) ? rui : ( avg_rui * 0.95 + (double)rui * 0.05 );	    
