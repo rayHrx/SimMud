@@ -54,7 +54,7 @@ other hand, if a region cannot be placed in the bin without exceeding
 the safe load threshold, a subsequent region is selected, hence
 sacrificing on region locality.
 
-# VNC set up guild
+# VNC Set Up Guide
 
 - Install Tiger vnc
     * MacOS :  
@@ -87,16 +87,21 @@ sacrificing on region locality.
     $ make
     ```
     
-# Start Server and clIENT
+# Start Server and Client
 
 - To start server, run:
     ```sh
-    $ ./server config_demo.ini 'port'
+    ./server config_demo.ini 'port'
     ```
 - To start client, run:
     ```sh
-    $ ./client --gui 'server port'
+    ./client --gui 'server port'
     ```
+- To batch start client, run:
+   ```sh
+   python3 run_client.py
+   ```
+   
 # Original README
 
 1. BUILDING THE GAME FROM SOURCES
