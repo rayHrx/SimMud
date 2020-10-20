@@ -99,7 +99,9 @@ sacrificing on region locality.
     ```
 - To batch start client, run:
    ```sh
-   python3 run_client.py
+   ./run_client.py --count=20 --port=':1747'
+   python run_client.py --count=20 --port=':1747'
+   python3 run_client.py --count=20 --port=':1747'
    ```
    
 # Original README
