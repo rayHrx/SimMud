@@ -50,7 +50,7 @@ def main():
     parser = argparse.ArgumentParser(description='run_client.py')
     parser.add_argument('--cmd', type=str, default='./client', help='Command to run')
     parser.add_argument('--count', type=int, required=True, help='Number of clients to deploy')
-    parser.add_argument('--out', type=str, help='Place to dump output files for each client. Default is no output')
+    parser.add_argument('--out', type=str, help='Place to dump output files for each client. Default is to stdout')
     parser.add_argument('--port', type=str, default=':1747', help='Server @<IP>:<PORT>')
     args = parser.parse_args()
 
