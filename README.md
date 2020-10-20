@@ -1,3 +1,57 @@
+# VNC Set Up Guide
+
+- Install Tiger vnc
+    * MacOS :  
+    ```sh
+    $ brew cask install tigervnc-viewer
+    ```
+    * Windows: TBD
+    * Linux: TBD
+  
+- SSH into one of the ug machine and run:
+    ```sh
+    $ ssh username@ugxxx.eecg.toronto.edu
+    $ ece297vnc start
+    ```
+- Follow the instruction in command window to start a VNC session:
+    eg: for **Mac**
+    1. On your local machine run:
+    ```sh
+    $ ssh -L 5901:127.0.0.1:5901 username@ugxxx.eecg.toronto.edu
+    ```
+    2. Then open TigerVNC and connect to:
+    ```sh
+    127.0.0.1:5901
+    ```
+
+# Compile SimMud
+
+- Run make under the root directory
+    ```sh
+    $ make
+    ```
+    
+# Start Server and Client
+
+- To start server, run:
+    ```sh
+    ./server config_demo.ini 'port'
+    ```
+- To start client, run:
+    ```sh
+    ./client --gui 'server port'
+    ```
+- To batch start client, run:
+   ```sh
+   ./run_client.py --count=20 --port=':1747'
+   python run_client.py --count=20 --port=':1747'
+   python3 run_client.py --count=20 --port=':1747'
+   ```
+
+# Make graph
+(currently only able to calculate moving averages for all .csv included in a directory)  
+python graph.py --path <csv_dir> --iter_num <avg across ? iterations> --out <output .csv>  
+
 # Two load balancing algorithms to be implemented
 ## 1 - Spread
 Spread is a dynamic load balancing algorithm that aims at optimizing
@@ -54,56 +108,6 @@ other hand, if a region cannot be placed in the bin without exceeding
 the safe load threshold, a subsequent region is selected, hence
 sacrificing on region locality.
 
-# VNC Set Up Guide
-
-- Install Tiger vnc
-    * MacOS :  
-    ```sh
-    $ brew cask install tigervnc-viewer
-    ```
-    * Windows: TBD
-    * Linux: TBD
-  
-- SSH into one of the ug machine and run:
-    ```sh
-    $ ssh username@ugxxx.eecg.toronto.edu
-    $ ece297vnc start
-    ```
-- Follow the instruction in command window to start a VNC session:
-    eg: for **Mac**
-    1. On your local machine run:
-    ```sh
-    $ ssh -L 5901:127.0.0.1:5901 username@ugxxx.eecg.toronto.edu
-    ```
-    2. Then open TigerVNC and connect to:
-    ```sh
-    127.0.0.1:5901
-    ```
-
-# Compile SimMud
-
-- Run make under the root directory
-    ```sh
-    $ make
-    ```
-    
-# Start Server and Client
-
-- To start server, run:
-    ```sh
-    ./server config_demo.ini 'port'
-    ```
-- To start client, run:
-    ```sh
-    ./client --gui 'server port'
-    ```
-- To batch start client, run:
-   ```sh
-   ./run_client.py --count=20 --port=':1747'
-   python run_client.py --count=20 --port=':1747'
-   python3 run_client.py --count=20 --port=':1747'
-   ```
-   
 # Original README
 
 1. BUILDING THE GAME FROM SOURCES
