@@ -1,9 +1,10 @@
-import subprocess
+#!/usr/bin/python3
+
 import argparse
 import os
+import subprocess
 import sys
 from cmd import Cmd
-import signal
 
 
 class ControlPrompt(Cmd):
@@ -79,3 +80,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
