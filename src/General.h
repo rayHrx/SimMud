@@ -52,6 +52,8 @@ or displayed as warnings
 #include <chrono>
 #include <iostream>
 #include <fstream>
+#include <iomanip>
+#include <sstream>
 
 /* My Headers */
 #include "Settings.h"

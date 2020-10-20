@@ -36,11 +36,11 @@ WorldUpdateModule::WorldUpdateModule( int id, MessageModule *_comm, SDL_barrier 
 	avg_wui = -1;
 	avg_rui = -1;
 
-	requests_number_tracker = new MetricsTracker<int>(1, "request_number");
-	requests_time_tracker = new MetricsTracker<Uint32>(5, "request_time");
+	requests_number_tracker = new MetricsTracker<int>(0, "request_number");
+	requests_time_tracker = new MetricsTracker<Uint32>(0, "request_time");
 
-	updates_number_tracker = new MetricsTracker<int>(1, "update_number");
-	updates_time_tracker = new MetricsTracker<Uint32>(5, "update_time");
+	updates_number_tracker = new MetricsTracker<int>(0, "update_number");
+	updates_time_tracker = new MetricsTracker<Uint32>(0, "update_time");
 	
 
 	assert( SDL_CreateThread( module_thread, (void*)this ) != NULL );
@@ -118,10 +118,14 @@ void WorldUpdateModule::run()
             delete m;
             timeout = sd->regular_update_interval - (SDL_GetTicks() - start_time);
             if( ((int)timeout) < 0 )	timeout = 0;
-
+		
+	//if(t_id == 1){
+	    //printf("start: %d\n",request_start_time);
+	    //printf("end: %d\n",SDL_GetTicks());
+	//}
 	    processing_time += (SDL_GetTicks() - request_start_time);
         }
-
+		
 	requests_number_tracker->addSample(requests);
 	requests_time_tracker->addSample(processing_time);
         
