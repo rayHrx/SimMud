@@ -15,20 +15,31 @@ class ControlPrompt(Cmd):
         super(ControlPrompt, self).__init__()
         self.__procs = procs
 
-    def do_exit(self, arg):
+    def do_list(self, arg=None):
+        print('List of running processes:')
+        print(*sorted(self.__procs.keys()))
+        print('')
+    
+    def do_update(self, arg=None):
+        print('Updating the status of processes..')
+        procs = dict()
+        for idx, proc in self.__procs.items():
+            if proc.poll() is None:
+                procs[idx] = proc
+            else:
+                proc.kill()
+        self.__procs = procs
+
+        return self.check_exit()
+
+    def do_exit(self, arg=None):
         print('Killing all running processes..')
         for idx, proc in self.__procs.items():
             proc.kill()
             print('    Killed process', idx)
         
-        print('All processes are killed. Exiting')
         self.__procs.clear()
-
-        return True
-
-    def do_list(self, arg):
-        print('List of running processes:')
-        print(*self.__procs.keys())
+        return self.check_exit()
 
     def do_kill(self, arg):
         request_to_kill = sorted(map(int, arg.split()))
@@ -42,15 +53,24 @@ class ControlPrompt(Cmd):
             del self.__procs[idx]
             print('    Killed process', idx)
 
+        return self.check_exit()
+
+    def check_exit(self):
         if len(self.__procs) == 0:
-            print('All processes are killed. Exiting')
-            return True
+            return self.clean_up()
+        else:
+            self.do_list()
+
+    def clean_up(self):
+        print('All processes are killed. Exiting')
+        return True
+
 
 def main():
     parser = argparse.ArgumentParser(description='run_client.py')
     parser.add_argument('--cmd', type=str, default='./client', help='Command to run')
     parser.add_argument('--count', type=int, required=True, help='Number of clients to deploy')
-    parser.add_argument('--out', type=str, help='Place to dump output files for each client. Default is to stdout')
+    parser.add_argument('--out', type=str, help='Place to dump output files for each client. Default is no output')
     parser.add_argument('--port', type=str, default=':1747', help='Server @<IP>:<PORT>')
     args = parser.parse_args()
 
