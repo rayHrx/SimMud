@@ -90,17 +90,26 @@ void finish()
 	/* free memory */
 	delete sd;
 }
+string serializeTime(const std::chrono::system_clock::time_point& time, const std::string& format){
+    std::time_t tt = std::chrono::system_clock::to_time_t(time);
+    std::tm tm = *std::gmtime(&tt); //GMT (UTC)
+    //std::tm tm = *std::localtime(&tt); //Locale time-zone, usually UTC by default.
+    std::stringstream ss;
+    ss << std::put_time( &tm, format.c_str() );
+    return ss.str();
+}
 
-void logPerformanceMetrics(WorldUpdateModule **wu_modules){
-	//std::chrono::system_clock::now()
-	printf("here");
-	string dir_name = string("test");
+void logPerformanceMetrics(WorldUpdateModule **wu_modules,const ServerData* sd ){
+	auto stamp = std::chrono::system_clock::now();
+	
+	string test_run_name = serializeTime(stamp, "UTC: %Y-%m-%d %H:%M:%S") + "-" + string(sd->algorithm_name);
+	string dir_name = string("metrics/" + test_run_name);
 	if(mkdir(dir_name.c_str(), 0777) == -1){
 		printf(strerror(errno));	
 	}
 	for(int i = 0; i < sd->num_threads; i++ ){
 		ofstream logFile;
-  		logFile.open(dir_name + "/" + to_string(i));	
+  		logFile.open(dir_name + "/" + to_string(i) + ".csv");	
 		
 		int iterations = wu_modules[i]->requests_number_tracker->getCalculatedAverages().size();
 		vector<string> rows(iterations + 1, "");
@@ -182,11 +191,11 @@ int main(int argc, char *argv[])
 		{			
 			scanf("%s", cmd);
 			if ( !strcmp(cmd, "exit") || !strcmp(cmd, "quit") || !strcmp(cmd, "q") ){
-				logPerformanceMetrics(wu_module);
+				logPerformanceMetrics(wu_module, sd);
 				exit(0);
 			}	
 		}		
-		logPerformanceMetrics(wu_module);
+		logPerformanceMetrics(wu_module, sd);
 		finish();
 
 	} catch ( const char *err ) {

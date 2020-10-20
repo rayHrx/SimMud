@@ -41,10 +41,10 @@ public:
 
 	
 	MetricsTracker<int>* requests_number_tracker;
-	MetricsTracker<Uint32>* requests_time_tracker;
+	MetricsTracker<double>* requests_time_tracker;
 
 	MetricsTracker<int>* updates_number_tracker;
-	MetricsTracker<Uint32>* updates_time_tracker;
+	MetricsTracker<double>* updates_time_tracker;
 
 public:
 	/* Constructor and setup methods */

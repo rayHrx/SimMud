@@ -36,11 +36,11 @@ WorldUpdateModule::WorldUpdateModule( int id, MessageModule *_comm, SDL_barrier 
 	avg_wui = -1;
 	avg_rui = -1;
 
-	requests_number_tracker = new MetricsTracker<int>(1, "request_number");
-	requests_time_tracker = new MetricsTracker<Uint32>(5, "request_time");
+	requests_number_tracker = new MetricsTracker<int>(0, "request_number");
+	requests_time_tracker = new MetricsTracker<double>(0, "request_time");
 
-	updates_number_tracker = new MetricsTracker<int>(1, "update_number");
-	updates_time_tracker = new MetricsTracker<Uint32>(5, "update_time");
+	updates_number_tracker = new MetricsTracker<int>(0, "update_number");
+	updates_time_tracker = new MetricsTracker<double>(0, "update_time");
 	
 
 	assert( SDL_CreateThread( module_thread, (void*)this ) != NULL );
@@ -80,14 +80,14 @@ void WorldUpdateModule::run()
 		timeout	= sd->regular_update_interval;
 		
 		int requests = 0;
-		Uint32 processing_time = 0;
+		double processing_time = 0;
 		int updates = 0;
-		Uint32 updating_time = 0;
+		double updating_time = 0;
 	
         while( (m = comm->receive( timeout, t_id )) != NULL )
         {
 	    ++requests;
-	    Uint32 request_start_time = SDL_GetTicks();	
+	    auto request_start_time = std::chrono::high_resolution_clock::now();	
 		
             addr = m->getAddress();
             type = m->getType();
@@ -118,10 +118,14 @@ void WorldUpdateModule::run()
             delete m;
             timeout = sd->regular_update_interval - (SDL_GetTicks() - start_time);
             if( ((int)timeout) < 0 )	timeout = 0;
-
-	    processing_time += (SDL_GetTicks() - request_start_time);
+		
+	//if(t_id == 1){
+	    //printf("start: %d\n",request_start_time);
+	    //printf("end: %d\n",SDL_GetTicks());
+	//}
+	    processing_time += std::chrono::duration_cast< std::chrono::microseconds >(std::chrono::high_resolution_clock::now() - request_start_time).count();
         }
-
+		
 	requests_number_tracker->addSample(requests);
 	requests_time_tracker->addSample(processing_time);
         
@@ -162,7 +166,7 @@ void WorldUpdateModule::run()
 	    while ( ( p = bucket->next() ) != NULL )
 	    {
 		++updates;
-		Uint32 update_start_time = SDL_GetTicks();
+		auto update_start_time = std::chrono::high_resolution_clock::now();
 
 	    	ms = new MessageWithSerializator( MESSAGE_SC_REGULAR_UPDATE, t_id, p->address );	assert(ms);
 		    s = ms->getSerializator();															assert(s);
@@ -175,7 +179,7 @@ void WorldUpdateModule::run()
 	    	if( sd->send_start_quest )		comm->send( new MessageXY(MESSAGE_SC_NEW_QUEST, t_id, p->address, sd->quest_pos), t_id );
 	    	if( sd->send_end_quest )		comm->send( new Message(MESSAGE_SC_QUEST_OVER, t_id, p->address), t_id );
 		
-		updating_time += (SDL_GetTicks() - update_start_time);
+		updating_time += std::chrono::duration_cast< std::chrono::microseconds >(std::chrono::high_resolution_clock::now() - update_start_time).count();
 	    }
 	
 	    updates_number_tracker->addSample(updates);
