@@ -6,66 +6,163 @@ import subprocess
 import sys
 from cmd import Cmd
 
+try:
+    import psutil
+except:
+    print('psutil is not installed. Try "pip install psutil"')
+
+
+def sizeof_fmt(num, suffix='B'):
+    '''
+    https://stackoverflow.com/questions/1094841/reusable-library-to-get-human-readable-version-of-file-size
+    '''
+    for unit in ['','Ki']:
+        if abs(num) < 1024.0:
+            return "%3.2f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.2f%s%s" % (num, 'Mi', suffix)
+
+def num_fmt(num):
+    return f"{num:,}"
+
 
 class ControlPrompt(Cmd):
-    def __init__(self, procs):
+    def __init__(self, process_manager):
         '''
-        procs is a dict of {idx: proc}
+        process_manager is ProcessManager
         '''
+        assert isinstance(process_manager, ProcessManager)
         super(ControlPrompt, self).__init__()
-        self.__procs = procs
+        self.__process_manager = process_manager
 
     def do_list(self, arg=None):
-        print('Info:', 'List of running processes:')
-        print('Info:', *sorted(self.__procs.keys()))
-        print('')
-    
-    def do_update(self, arg=None):
-        print('Info:', 'Updating the status of processes..')
-        procs = dict()
-        for idx, proc in self.__procs.items():
-            if proc.poll() is None:
-                procs[idx] = proc
-            else:
-                proc.kill()
-        self.__procs = procs
+        cur, prev = self.__process_manager.list_process()
+        diff = sorted(set(prev).difference(cur))
+        diff_len = len(diff)
+        if diff_len != 0:
+            print('Info:', diff_len, 'processes are no longer running:')
+            print('Info:', *diff)
 
-        return self.check_exit()
+        print('Info:', 'List of running processes:')
+        print('Info:', *cur)
+        
+        if len(cur) == 0:
+            return self.__cleanup()
+        else:
+            print('')
 
     def do_exit(self, arg=None):
-        print('Warning:', 'Killing running processes.. ALL')
-        for idx, proc in self.__procs.items():
-            proc.kill()
-            print('Warning:', '    Killed process', idx)
+        print('Warning:', 'Stopping running processes.. ALL')
+        cur, _ = self.__process_manager.list_process()
+
+        for idx in cur:
+            self.__process_manager.stop_process(idx)
+            print('Warning:', '    Stopped process', idx)
         
-        self.__procs.clear()
-        return self.check_exit()
+        return self.__cleanup()
 
-    def do_kill(self, arg):
-        request_to_kill = sorted(map(int, arg.split()))
-        print('Info:', 'To kill:', *request_to_kill)
+    def do_stop(self, arg):
+        request_to_stop = sorted(map(int, arg.split()))
+        print('Info:', 'To Stop:', *request_to_stop)
 
-        to_kill = sorted(set(self.__procs.keys()).intersection(set(request_to_kill)))
-        print('Warning:', 'Killing running processes..', *to_kill)
+        cur, _ = self.__process_manager.list_process()
 
-        for idx in to_kill:
-            self.__procs[idx].kill()
-            del self.__procs[idx]
-            print('Warning:', '    Killed process', idx)
+        to_stop = sorted(set(cur).intersection(request_to_stop))
+        print('Warning:', 'Stopping running processes..', *to_stop)
 
-        return self.check_exit()
+        for idx in to_stop:
+            self.__process_manager.stop_process(idx)
+            print('Warning:', '    Stopped process', idx)
 
-    def check_exit(self):
-        if len(self.__procs) == 0:
-            return self.clean_up()
-        else:
-            self.do_list()
+        return self.do_list()
 
-    def clean_up(self):
+    def do_new(self, arg):
+        try:
+            arg = int(arg)
+        except:
+            arg = 1
+        
+        print('Info:', 'Launching', arg, 'processes')
+        for _ in range(arg):
+            self.__process_manager.launch_process()
+
+        return self.do_list()
+
+    def __cleanup(self):
         print('Info:')
-        print('Info:', 'All processes are killed. Exiting')
+        print('Info:', 'All processes are done. Exiting')
         print('Info:')
         return True
+
+    def do_load(self, arg):
+        print('Info:', psutil.cpu_count(logical=False), 'physical CPUs,', psutil.cpu_count(logical=True), 'logical CPUs,', '@', psutil.cpu_freq().current, 'MHz')
+        print('Info:', str(psutil.cpu_percent()) + '%', 'CPU:', end=' ')
+        print(*psutil.cpu_percent(percpu=True), sep='% ', end='%\n')
+
+        if sys.platform.startswith('win'):
+            load = psutil.getloadavg()
+        else:
+            load = os.getloadavg()
+        print('Info:', 'Load:', *load)
+
+        ram = psutil.virtual_memory()
+        print('Info:', 'RAM:', sizeof_fmt(ram.used) + '/' + sizeof_fmt(ram.total), str(ram.percent) + '%')
+
+        nio = psutil.net_io_counters()
+        print('Info:', 'NET:', sizeof_fmt(nio.bytes_sent), 'Sent,', sizeof_fmt(nio.bytes_recv), 'Received,', num_fmt(nio.packets_sent), 'Packets Sent,', num_fmt(nio.packets_recv), 'Packets Received,', num_fmt(nio.errin), 'Error In,', num_fmt(nio.errout), 'Error Out')
+
+
+class ProcessManager:
+    def __init__(self, process_creater):
+        '''
+        proc = process_creater(idx)
+        '''
+        self.__process_creater = process_creater
+        self.__processes = list()
+
+    def launch_process(self):
+        idx = len(self.__processes)
+        proc = self.__process_creater(idx)
+        assert isinstance(proc, subprocess.Popen)
+        self.__processes.append(proc)
+        assert len(self.__processes) == (idx+1)
+        return idx
+
+    def stop_process(self, idx):
+        assert idx < len(self.__processes)
+        assert self.__processes[idx] is not None
+        self.__processes[idx].terminate()
+        self.__processes[idx] = None
+
+    def wait_process(self, idx):
+        assert idx < len(self.__processes)
+        assert self.__processes[idx] is not None
+        self.__processes[idx].wait()
+        self.__processes[idx] = None
+
+    def wait_all(self):
+        for idx in range(len(self.__processes)):
+            if self.__processes[idx] is not None:
+                self.wait_process(idx)
+
+    def list_process(self):
+        '''
+        Update and return the list of processes still running
+        (latest_running_process_idxs, previously_running_process_idxs)
+        '''
+        prev_idxs = sorted(map(lambda idx_proc: idx_proc[0], filter(lambda idx_proc: idx_proc[1] is not None, enumerate(self.__processes))))
+        
+        def check_alive(proc):
+            if proc is not None:
+                if proc.poll() is None:
+                    return proc
+            else:
+                return None
+        self.__processes = list(map(check_alive, self.__processes))
+        
+        cur_idxs = sorted(map(lambda idx_proc: idx_proc[0], filter(lambda idx_proc: idx_proc[1] is not None, enumerate(self.__processes))))
+
+        return (cur_idxs, prev_idxs)
 
 
 def main(args):
@@ -74,36 +171,44 @@ def main(args):
 
     if args.wait:
         print('Warning:', 'The program will terminate once all subprocesses are terminated')
-    if args.silent: # Suppress all outputs
-        outputs = [subprocess.DEVNULL] * args.count
-        out_place_str = 'supressed'
+    
+    if args.stdout: # stdout
+        out_place_str = 'redirected into stdout'
     else:
-        if args.output: # Redirect output to files
+        if args.output: # files
             if not os.path.exists(args.output):
                 os.mkdir(args.output)
-            outputs = [open(os.path.join(args.output, 'client_' + str(i) + '.log'), mode='w') for i in range(args.count)]
             out_place_str = 'redirected into ' + args.output
-        else: # stdout
-            outputs = [sys.stdout] * args.count
-            out_place_str = 'redirected into stdout'
+        else: # devnull
+            out_place_str = 'supressed'
+
     print('Info:', 'All output of running processes are', out_place_str)
 
     command = args.cmd.split()
     command.append(args.port)
 
     print('Info:')
-    print('Info:', "Launching all processes '" + ' '.join(command) + "'")
-    def launch_job(i):
-        print('Info:', '    Running process', i)
-        return subprocess.Popen(command, stdout=outputs[i], stderr=outputs[i])
-    procs = [launch_job(i) for i in range(args.count)]
+    print('Info:', 'Launching', args.count, "processes '" + ' '.join(command) + "'")
+    def launch_job(idx):
+        print('Info:', '    Launching process', idx)
+        if args.stdout: # stdout
+            output = sys.stdout
+        else:
+            if args.output: # file
+                output = open(os.path.join(args.output, 'client_' + str(idx) + '.log'), mode='w')
+            else: # devnull
+                output = subprocess.DEVNULL
+
+        return subprocess.Popen(command, stdout=output, stderr=output)
+
+    pm = ProcessManager(launch_job)
+    for _ in range(args.count):
+        pm.launch_process()
 
     if args.wait:
-        for proc in procs:
-            proc.wait()
+        pm.wait_all()
     else:
-        # turn list of procs to dict of {proc_idx: prc}
-        ControlPrompt(dict(enumerate(procs))).cmdloop()
+        ControlPrompt(pm).cmdloop()
 
 
 def parse_arguments():
@@ -112,8 +217,8 @@ def parse_arguments():
     parser.add_argument('--port', type=str, default=':1747', help='Server @<IP>:<PORT>')
     parser.add_argument('--cmd', type=str, default='./client', help='Command to run')
 
-    parser.add_argument('--output', type=str, help='Place to dump output files for each client. Default is stdout.')
-    parser.add_argument('--silent', action='store_true', help='Suppress all output. Default is stdout.')
+    parser.add_argument('--output', type=str, help='Directory to forward the stdout and stderr of each subprocesses. Default is devnull. Be aware of concurrent file writing!')
+    parser.add_argument('--stdout', action='store_true', help='Forward the stdout and stderr of each subprocesses to stdout. Default is devnull.')
 
     parser.add_argument('--wait', action='store_true', help='Disable the command shell, exit when all processes are done. Default is command shell.')
     
@@ -122,3 +227,4 @@ def parse_arguments():
 
 if __name__ == '__main__':
     main(parse_arguments())
+
