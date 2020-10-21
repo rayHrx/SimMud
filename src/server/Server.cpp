@@ -102,7 +102,7 @@ string serializeTime(const std::chrono::system_clock::time_point& time, const st
 void logPerformanceMetrics(WorldUpdateModule **wu_modules,const ServerData* sd ){
 	auto stamp = std::chrono::system_clock::now();
 	
-	string test_run_name = serializeTime(stamp, "UTC: %Y-%m-%d %H:%M:%S") + "-" + string(sd->algorithm_name);
+	string test_run_name = serializeTime(stamp, "UTC:%Y-%m-%d-%H:%M:%S") + "-" + string(sd->algorithm_name);
 	string dir_name = string("metrics/" + test_run_name);
 	if(mkdir(dir_name.c_str(), 0777) == -1){
 		printf(strerror(errno));	
@@ -110,9 +110,6 @@ void logPerformanceMetrics(WorldUpdateModule **wu_modules,const ServerData* sd )
 	for(int i = 0; i < sd->num_threads; i++ ){
 		ofstream logFile;
   		logFile.open(dir_name + "/" + to_string(i) + ".csv");	
-		
-		int iterations = wu_modules[i]->requests_number_tracker->getCalculatedAverages().size();
-		vector<string> rows(iterations + 1, "");
 		
 		int headerRow = 0;
 		auto module = wu_modules[i];		
@@ -122,12 +119,15 @@ void logPerformanceMetrics(WorldUpdateModule **wu_modules,const ServerData* sd )
 		auto t3 = module->updates_number_tracker;
 		auto t4 = module->updates_time_tracker;
 
-		rows[headerRow] += t1->getName() + " " + t2->getName() + " " + t3->getName() + " " + t4->getName();
-
 		auto t1Sample = t1->getCalculatedAverages();
 		auto t2Sample = t2->getCalculatedAverages();
 		auto t3Sample = t3->getCalculatedAverages();
 		auto t4Sample = t4->getCalculatedAverages();
+
+		int iterations = max(t1Sample.size(), max(t2Sample.size(), max(t3Sample.size(), t4Sample.size())));
+
+		vector<string> rows(iterations + 1, "");
+		rows[headerRow] += t1->getName() + " " + t2->getName() + " " + t3->getName() + " " + t4->getName();
 	
 		for(int i = 0 ; i < t1Sample.size(); ++ i){
 			rows[i + 1] += to_string(t1Sample[i]);
