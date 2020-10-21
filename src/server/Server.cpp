@@ -101,8 +101,13 @@ string serializeTime(const std::chrono::system_clock::time_point& time, const st
 
 void logPerformanceMetrics(WorldUpdateModule **wu_modules,const ServerData* sd ){
 	auto stamp = std::chrono::system_clock::now();
-	
-	string test_run_name = serializeTime(stamp, "UTC:%Y-%m-%d-%H:%M:%S") + "-" + string(sd->algorithm_name);
+
+	int total_players = 0;
+	for(int i = 0; i < sd->num_threads; ++ i){
+		total_players += sd->wm.players[i].size();	
+	}	
+
+	string test_run_name = serializeTime(stamp, "UTC_%Y-%m-%d-%H_%M_%S") + "-" + string(sd->algorithm_name) + "-" + to_string(total_players);
 	string dir_name = string("metrics/" + test_run_name);
 	if(mkdir(dir_name.c_str(), 0777) == -1){
 		printf(strerror(errno));	
