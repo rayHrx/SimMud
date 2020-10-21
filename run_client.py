@@ -58,7 +58,7 @@ class ControlPrompt(Cmd):
         else:
             print('')
 
-    def do_exit(self, arg=None, send_signal=True):
+    def do_exit(self, arg=None, send_signal=False):
         print('Warning:', 'Stopping running processes.. ALL')
         cur, _ = self.__process_manager.list_process()
 
@@ -69,7 +69,7 @@ class ControlPrompt(Cmd):
         
         return self.do_list()
 
-    def do_stop(self, arg, send_signal=True):
+    def do_stop(self, arg, send_signal=False):
         request_to_stop = sorted(map(int, arg.split()))
         print('Info:', 'To Stop:', *request_to_stop)
 
@@ -132,7 +132,7 @@ class ProcessManager:
         assert len(self.__processes) == (idx+1)
         return idx
 
-    def stop_process(self, idx, send_signal=True):
+    def stop_process(self, idx, send_signal=False):
         assert idx < len(self.__processes)
         assert self.__processes[idx] is not None
         if sys.platform.startswith('win') or not send_signal:
