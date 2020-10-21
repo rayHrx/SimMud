@@ -43,11 +43,17 @@ class ControlPrompt(Cmd):
             print('Info:', diff_len, 'processes are no longer running:')
             print('Info:', *diff)
 
-        print('Info:', 'List of running processes:')
-        print('Info:', *cur)
+        if len(cur) > 0:
+            print('Info:', 'List of running processes:', len(cur))
+            print('Info:', *cur)
+        else:
+            print('Info:', 'No running processes')
         
         if len(cur) == 0:
-            return self.__cleanup()
+            print('Info:')
+            print('Info:', 'All processes are done. Exiting')
+            print('Info:')
+            return True
         else:
             print('')
 
@@ -59,7 +65,7 @@ class ControlPrompt(Cmd):
             self.__process_manager.stop_process(idx)
             print('Warning:', '    Stopped process', idx)
         
-        return self.__cleanup()
+        return self.do_list()
 
     def do_stop(self, arg):
         request_to_stop = sorted(map(int, arg.split()))
@@ -88,11 +94,6 @@ class ControlPrompt(Cmd):
 
         return self.do_list()
 
-    def __cleanup(self):
-        print('Info:')
-        print('Info:', 'All processes are done. Exiting')
-        print('Info:')
-        return True
 
     def do_load(self, arg):
         print('Info:', psutil.cpu_count(logical=False), 'physical CPUs,', psutil.cpu_count(logical=True), 'logical CPUs,', '@', psutil.cpu_freq().current, 'MHz')
