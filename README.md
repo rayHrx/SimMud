@@ -49,12 +49,12 @@
    ```
 
 # Make graph 
-python graph.py 
-Required options: --path <csv_dir> --iter_num <avg across ? iterations> 
-Optional options: --debug <T/F for debug msg> --raw <T/F for if do avg> --type <Static (0) or spread (1)>
-e.g. 
-python graph.py --type 0 --iter_num 50 --path <static_csv>
-python graph.py --type 1 --iter_num 50 --path <spread_csv>
+python graph.py   
+Required options: --path <csv_dir> --iter_num <avg across ? iterations>   
+Optional options: --debug <T/F for debug msg> --raw <T/F for if do avg> --type <Static (0) or spread (1)>  
+e.g.   
+python graph.py --type 0 --iter_num 50 --path <static_csv>  
+python graph.py --type 1 --iter_num 50 --path <spread_csv>  
 
 # Two load balancing algorithms to be implemented
 ## 1 - Spread
