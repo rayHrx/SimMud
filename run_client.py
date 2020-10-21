@@ -139,7 +139,7 @@ class ProcessManager:
             self.__processes[idx].terminate()
             self.__processes[idx] = None
         else:
-            self.__processes[idx].send_signal(signal.SIGINT)
+            self.__processes[idx].send_signal(signal.SIGTERM)
 
     def wait_process(self, idx):
         assert idx < len(self.__processes)
