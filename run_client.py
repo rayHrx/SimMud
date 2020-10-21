@@ -45,7 +45,7 @@ class ControlPrompt(Cmd):
             print('Info:', *diff)
 
         if len(cur) > 0:
-            print('Info:', 'List of running processes:')
+            print('Info:', 'List of running processes:', len(cur))
             print('Info:', *cur)
         else:
             print('Info:', 'No running processes')
