@@ -2,7 +2,6 @@
 
 import argparse
 import os
-import signal
 import subprocess
 import sys
 from cmd import Cmd
@@ -58,18 +57,17 @@ class ControlPrompt(Cmd):
         else:
             print('')
 
-    def do_exit(self, arg=None, send_signal=False):
+    def do_exit(self, arg=None):
         print('Warning:', 'Stopping running processes.. ALL')
         cur, _ = self.__process_manager.list_process()
 
-        action_str = 'Stopped' if not send_signal else 'Notified'
         for idx in cur:
-            self.__process_manager.stop_process(idx, send_signal)
-            print('Warning:', '    ', action_str, 'process', idx)
+            self.__process_manager.stop_process(idx)
+            print('Warning:', '    Stopped process', idx)
         
         return self.do_list()
 
-    def do_stop(self, arg, send_signal=False):
+    def do_stop(self, arg):
         request_to_stop = sorted(map(int, arg.split()))
         print('Info:', 'To Stop:', *request_to_stop)
 
@@ -78,10 +76,9 @@ class ControlPrompt(Cmd):
         to_stop = sorted(set(cur).intersection(request_to_stop))
         print('Warning:', 'Stopping running processes..', *to_stop)
 
-        action_str = 'Stopped' if not send_signal else 'Notified'
         for idx in to_stop:
-            self.__process_manager.stop_process(idx, send_signal)
-            print('Warning:', '    ', action_str, 'process', idx)
+            self.__process_manager.stop_process(idx)
+            print('Warning:', '    Stopped process', idx)
 
         return self.do_list()
 
@@ -132,14 +129,11 @@ class ProcessManager:
         assert len(self.__processes) == (idx+1)
         return idx
 
-    def stop_process(self, idx, send_signal=False):
+    def stop_process(self, idx):
         assert idx < len(self.__processes)
         assert self.__processes[idx] is not None
-        if sys.platform.startswith('win') or not send_signal:
-            self.__processes[idx].terminate()
-            self.__processes[idx] = None
-        else:
-            self.__processes[idx].send_signal(signal.SIGTERM)
+        self.__processes[idx].terminate()
+        self.__processes[idx] = None
 
     def wait_process(self, idx):
         assert idx < len(self.__processes)
