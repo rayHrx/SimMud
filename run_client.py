@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import signal
 import subprocess
 import sys
 from cmd import Cmd
@@ -43,25 +44,32 @@ class ControlPrompt(Cmd):
             print('Info:', diff_len, 'processes are no longer running:')
             print('Info:', *diff)
 
-        print('Info:', 'List of running processes:')
-        print('Info:', *cur)
+        if len(cur) > 0:
+            print('Info:', 'List of running processes:')
+            print('Info:', *cur)
+        else:
+            print('Info:', 'No running processes')
         
         if len(cur) == 0:
-            return self.__cleanup()
+            print('Info:')
+            print('Info:', 'All processes are done. Exiting')
+            print('Info:')
+            return True
         else:
             print('')
 
-    def do_exit(self, arg=None):
+    def do_exit(self, arg=None, send_signal=True):
         print('Warning:', 'Stopping running processes.. ALL')
         cur, _ = self.__process_manager.list_process()
 
+        action_str = 'Stopped' if not send_signal else 'Notified'
         for idx in cur:
-            self.__process_manager.stop_process(idx)
-            print('Warning:', '    Stopped process', idx)
+            self.__process_manager.stop_process(idx, send_signal)
+            print('Warning:', '    ', action_str, 'process', idx)
         
-        return self.__cleanup()
+        return self.do_list()
 
-    def do_stop(self, arg):
+    def do_stop(self, arg, send_signal=True):
         request_to_stop = sorted(map(int, arg.split()))
         print('Info:', 'To Stop:', *request_to_stop)
 
@@ -70,9 +78,10 @@ class ControlPrompt(Cmd):
         to_stop = sorted(set(cur).intersection(request_to_stop))
         print('Warning:', 'Stopping running processes..', *to_stop)
 
+        action_str = 'Stopped' if not send_signal else 'Notified'
         for idx in to_stop:
-            self.__process_manager.stop_process(idx)
-            print('Warning:', '    Stopped process', idx)
+            self.__process_manager.stop_process(idx, send_signal)
+            print('Warning:', '    ', action_str, 'process', idx)
 
         return self.do_list()
 
@@ -88,11 +97,6 @@ class ControlPrompt(Cmd):
 
         return self.do_list()
 
-    def __cleanup(self):
-        print('Info:')
-        print('Info:', 'All processes are done. Exiting')
-        print('Info:')
-        return True
 
     def do_load(self, arg):
         print('Info:', psutil.cpu_count(logical=False), 'physical CPUs,', psutil.cpu_count(logical=True), 'logical CPUs,', '@', psutil.cpu_freq().current, 'MHz')
@@ -128,11 +132,14 @@ class ProcessManager:
         assert len(self.__processes) == (idx+1)
         return idx
 
-    def stop_process(self, idx):
+    def stop_process(self, idx, send_signal=True):
         assert idx < len(self.__processes)
         assert self.__processes[idx] is not None
-        self.__processes[idx].terminate()
-        self.__processes[idx] = None
+        if sys.platform.startswith('win') or not send_signal:
+            self.__processes[idx].terminate()
+            self.__processes[idx] = None
+        else:
+            self.__processes[idx].send_signal(signal.SIGINT)
 
     def wait_process(self, idx):
         assert idx < len(self.__processes)
