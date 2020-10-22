@@ -52,8 +52,8 @@
 
 # Make graph 
 python graph.py   
-Required options: --path <csv_dir> --iter_num <avg across ? iterations>   
-Optional options: --debug <T/F for debug msg> --raw <T/F for if do avg> --type <Static (0) or spread (1)>  
+Required options: --path <csv_dir> --iter_num <avg across ? iterations> --title <title of the graph>  
+Optional options: --debug <T/F for debug msg> --raw <T/F for if do avg> 
 e.g.   
 python graph.py --type 0 --iter_num 50 --path <static_csv>  
 python graph.py --type 1 --iter_num 50 --path <spread_csv>  
