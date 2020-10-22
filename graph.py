@@ -25,7 +25,7 @@ def calculate_avg(filename, iter_num, debug, raw):
                 continue
 
             if line_num == 0:
-                col_num = len(row)
+                col_num = len(row)+1
                 for j in range(col_num):
                     iter_sum.append(0)
                     data.append([])
@@ -34,8 +34,16 @@ def calculate_avg(filename, iter_num, debug, raw):
             if line_num == max_row:
                 break
 
-            if len(row) < col_num:
+            if len(row)+1 < col_num:
                 break
+
+            time_per_request = 0
+            time_per_update = 0
+            if float(row[0]) != 0:
+                time_per_request = float(row[1])/float(row[0])
+            if float(row[2]) != 0:
+                time_per_update = float(row[3])/float(row[2])
+            row.append(time_per_request + time_per_update)
 
             if raw:
                 for j in range(col_num):
@@ -112,11 +120,12 @@ def main():
     # plot the same column across all server threads on one subplot
     # subfig[i] holds column i
     style = ["r", "b", "g", "k"]
-    title = ["Number of client requests", "Time spent processing client requests", "Number of updates sent to clients", "Time spent sending client updates"]
-    ylabel = ["Number", "Time", "Number", "Time"]
+    title = ["Number of client requests", "Time spent processing client requests", "Number of updates sent to clients", "Time spent sending client updates", "Update interval"]
+    ylabel = ["Number", "Time", "Number", "Time", "Time"]
     subfig = []
-    for i in range(4): # 4 columns in total
-        subfig.append(fig.add_subplot(2, 2, i+1))
+    pos = [0, 1, 3, 4, 2]
+    for i in range(5): # 4 columns in total
+        subfig.append(fig.add_subplot(2, 3, i+1))
         subfig[i].title.set_text(title[i])
         subfig[i].set(xlabel="Iteration",ylabel=ylabel[i])
     
@@ -126,7 +135,7 @@ def main():
         # avg (2D) - [col] [avg index]
         avg = calculate_avg(os.path.join(args.path, filename), args.iter_num, args.debug, args.raw)
         for i in range(len(avg)):
-            subfig[i].plot(avg[i], style[num])
+            subfig[pos[i]].plot(avg[i], style[num])
 
     plt.show()
 
