@@ -1,101 +1,135 @@
 import argparse
 import csv
 import os
+import matplotlib.pyplot as plt
 
-def read_csv_files(path, outfile, iter_num):
-    clients = []
-    for file in os.listdir(path):
-        if file.endswith(".csv"):
-            clients.append(file)
-    num_clients = len(clients)
-    print("num_clients:", num_clients)
-    max_iter = 0
+def calculate_avg(filename, iter_num, debug, raw):
 
-    # compute average for each client
-    avg = [] # 2D
-    first_csv = True
-    for i in range(num_clients):
-        with open(os.path.join(path, clients[i]), mode='r') as client:
-            csv_reader = csv.reader(client, delimiter=',')
-            first_line = True
-            line_num = 0
-            col_num = 0
-            iter_sum = []
-            data = [] # 2D
-            data_i = 0
-            for row in csv_reader:
-                print(row)
+    # compute average for each server thread
+    avg = [] # (2D) [col][index]
+    col_num = 0
+    with open(filename, mode='r') as f:
+        csv_reader = csv.reader(f, delimiter=',')
+        first_line = True
+        line_num = 0
+        iter_sum = []
+        data = [] # 2D, [col][iter_num]
+        data_i = 0 # index of where in data to write - 0 <= data_i < iter_num
 
-                if max_iter != 0 and line_num > max_iter:
-                    break
+        for row in csv_reader:
+            if debug: print("row", line_num, row)
 
-                if first_line:
-                    first_line = False
+            if first_line:
+                first_line = False
+                continue
+
+            if line_num == 0:
+                col_num = len(row)
+                for j in range(col_num):
+                    iter_sum.append(0)
+                    data.append([])
+                    avg.append([])
+
+            if len(row) < col_num:
+                break
+
+            if raw:
+                for j in range(col_num):
+                    avg[j].append(float(row[j]))
                     continue
 
-                if line_num == 0:
-                    col_num = len(row)
-                    for j in range(col_num):
-                        iter_sum.append(0)
-                        data.append([])
-                        if first_csv:
-                            avg.append([])
-
-                # calculate average as we read in new data
-                # accumulate till we have a number of data points > iter_num
-                if line_num < iter_num - 1:
-                    for j in range(col_num):
+            # calculate average as we read in new data
+            # accumulate till we have a number of data points > iter_num
+            if line_num < iter_num - 1:
+                for j in range(col_num):
+                    iter_sum[j] = iter_sum[j] + float(row[j])
+                    data[j].append(float(row[j]))
+            # have enough data
+            else:
+                for j in range(col_num):
+                    if line_num == iter_num - 1: # can calculate the first average
                         iter_sum[j] = iter_sum[j] + float(row[j])
                         data[j].append(float(row[j]))
-                else:
-                    if line_num == iter_num - 1: # can calculate the first average
-                        for j in range(col_num):
-                            iter_sum[j] = iter_sum[j] + float(row[j])
-                            data[j].append(float(row[j]))
-                    else:
-                        for j in range(col_num): # need to replace the oldest data with the newest
-                            iter_sum[j] = iter_sum[j] + float(row[j]) - data[j][data_i]
-                            data[j][data_i] = float(row[j])
+                    else: # need to replace the oldest data with the newest
+                        iter_sum[j] = iter_sum[j] + float(row[j]) - data[j][data_i]
+                        data[j][data_i] = float(row[j])
+                    avg[j].append(iter_sum[j] / iter_num)
 
-                    if first_csv:
-                        avg[j].append(iter_sum[j] / iter_num)
-                    else:
-                        avg[j][line_num - iter_num + 1] = avg[j][line_num - iter_num + 1] + iter_sum[j] / iter_num
+            line_num = line_num + 1
+            if data_i == iter_num - 1:
+                data_i = 0
+            else:
+                data_i = data_i + 1
+        
+        if debug:
+            print("-----------")
+            print("avg:", avg)
+            print("-----------")
 
-                line_num = line_num + 1
-                if data_i == iter_num - 1:
-                    data_i = 0
-                else:
-                    data_i = data_i + 1
+    if not raw:
+        # write result to a .csv file
+        outfile = os.path.splitext(filename)[0] + "_avg.csv"
+        if debug: print(outfile)
+        dump = [] # (2D) [index][col_num]
+        count = len(avg[0])
+        for i in range(count):
+            dump.append([])
+            for j in range(col_num):
+                dump[i].append(avg[j][i])
+        if debug: print(dump)
 
-            first_csv = False
-            print(data)
-            print("-----")
-            print(avg)
-            
-                        
-    # write result to a .csv file
-    # with open(os.path.join(path, outfile), mode='w') as res_file:
+        with open(outfile, mode='w') as res_file:
+            csv_writer = csv.writer(res_file, delimiter=',')
+            for row in dump:
+                csv_writer.writerow(row)
 
-            
-
-    #csv_files = []
-    #return data
-
-def compute_average(data, iter):
     return avg
 
 def main():
     parser = argparse.ArgumentParser(description='draw graph based on .csv data')
     parser.add_argument('--path', type=str, required=True, help='Path to the directory of .csv files')
     parser.add_argument('--iter_num', type=int, required=True, help='Number of iterations to compute the average')
-    parser.add_argument('--out', type=str, required=True, help='Name of the output file containing average')
+    parser.add_argument('--debug', type=bool, default=False, help='Print debug messages when on')
+    parser.add_argument('--raw', type=bool, default=False, help='Raw data')
+    parser.add_argument('--type', type=int, required=True, help="Static (0) or spread (1)")
     args = parser.parse_args()
     
-    read_csv_files(args.path, args.out, args.iter_num)
-    #data = read_csv_files(args.path)
-    #avg = compute_average(data, args.iter_num)
+    fig = plt.figure()
+    if args.type == 0:
+        suptitle = "Static"
+    elif args.type == 1:
+        suptitle = "Spread"
+    else:
+        print("wrong type value!")
+        return 0
+    fig.suptitle(suptitle, fontsize=16)
 
+    server_threads = []
+    for file in os.listdir(args.path):
+        if file.endswith(".csv") and "avg" not in file:
+            server_threads.append(file)
+    num_threads = len(server_threads)
+
+    # plot the same column across all server threads on one subplot
+    # subfig[i] holds column i
+    style = ["r", "b", "g", "k"]
+    title = ["Number of client requests", "Time spent processing client requests", "Number of updates sent to clients", "Time spent sending client updates"]
+    ylabel = ["Number", "Time", "Number", "Time"]
+    subfig = []
+    for i in range(4): # 4 columns in total
+        subfig.append(fig.add_subplot(2, 2, i+1))
+        subfig[i].title.set_text(title[i])
+        subfig[i].set(xlabel="Iteration",ylabel=ylabel[i])
+    
+    # read one .csv, and add its data to all subplots using the same style
+    for num in range(num_threads):
+        filename = server_threads[num]
+        # avg (2D) - [col] [avg index]
+        avg = calculate_avg(os.path.join(args.path, filename), args.iter_num, args.debug, args.raw)
+        for i in range(len(avg)):
+            subfig[i].plot(avg[i], style[num])
+
+    plt.show()
 
 if __name__ == '__main__':
     main()
