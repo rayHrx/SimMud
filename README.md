@@ -44,8 +44,10 @@
 - To batch start client, run:
    ```sh
    ./run_client.py --count=20 --port=':1747'
-   python run_client.py --count=20 --port=':1747'
-   python3 run_client.py --count=20 --port=':1747'
+   ```
+- To batch start client over SSH, run:
+   ```sh
+   ./super_client.py --remote_launcher=<remote_run_client.py> --count=<total_count> --port=<ugxxx.eecg.utoronto.ca:port> --cmd=<remote_client> --username=<ug_username> --password=<ug_password>
    ```
 
 # Make graph 
