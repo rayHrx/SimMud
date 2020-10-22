@@ -15,6 +15,7 @@ def calculate_avg(filename, iter_num, debug, raw):
         iter_sum = []
         data = [] # 2D, [col][iter_num]
         data_i = 0 # index of where in data to write - 0 <= data_i < iter_num
+        max_row = 8000
 
         for row in csv_reader:
             if debug: print("row", line_num, row)
@@ -29,6 +30,9 @@ def calculate_avg(filename, iter_num, debug, raw):
                     iter_sum.append(0)
                     data.append([])
                     avg.append([])
+
+            if line_num == max_row:
+                break
 
             if len(row) < col_num:
                 break
@@ -95,7 +99,8 @@ def main():
     args = parser.parse_args()
     
     fig = plt.figure()
-    subptitle = args.title
+    suptitle = args.title.split('_')
+    suptitle = ' '.join(suptitle)
     fig.suptitle(suptitle, fontsize=16)
 
     server_threads = []
