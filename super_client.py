@@ -1,0 +1,227 @@
+#!/usr/bin/python3
+
+import argparse
+import copy
+import itertools
+from cmd import Cmd
+
+try:
+    import paramiko
+except:
+    print('paramiko is not installed. Try "pip install paramiko"')
+
+
+class SSHManager:
+    def __init__(self, machines, username, password):
+        def connect_client(machine, username, password):
+            client = paramiko.SSHClient()
+            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            client.connect(machine, username=username, password=password)
+            print('Info:', 'Connected to', machine, 'successfully')
+            return client
+
+        self.__machine_names = copy.deepcopy(machines)
+        self.__machines = [connect_client(machine, username, password) for machine in machines]
+        self.__ioe = [None] * len(self.__machines)
+
+    def get_num_machines(self):
+        return len(self.__machines)
+    
+    def get_machine(self, idx):
+        assert idx < self.get_num_machines()
+        return self.__machines[idx]
+
+    def get_ioe(self, idx):
+        assert idx < self.get_num_machines()
+        return self.__ioe[idx]
+
+    def get_machine_name(self, idx):
+        assert idx < self.get_num_machines()
+        return self.__machine_names[idx]
+
+    def launch_task_on_machine(self, idx, task_launcher):
+        '''
+        (stdin, stdout, stderr) = task_launcher(idx, machine, machine_name)
+        '''
+        assert idx < self.get_num_machines()
+        assert task_launcher is not None
+        self.__ioe[idx] = task_launcher(idx, self.get_machine(idx), self.get_machine_name(idx))
+
+    def close_machine(self, idx):
+        assert idx < self.get_num_machines()
+        self.__machines[idx].close()
+        print('Info:', '    Closed', self.get_machine_name(idx))
+
+    def close_all(self):
+        if self.__machines is not None:
+            for idx in range(self.get_num_machines()):
+                self.close_machine(idx)
+    
+            self.__machine_names = None
+            self.__machines = None
+            self.__ioe = None
+    
+    def __del__(self):
+        self.close_all()
+            
+
+class ControlPrompt(Cmd):
+    def __init__(self, ssh_manager):
+        '''
+        ssh_manager is SSHManager
+        '''
+        assert isinstance(ssh_manager, SSHManager)
+        super(ControlPrompt, self).__init__()
+        self.__ssh_manager = ssh_manager
+
+    def do_list(self, arg=None):
+        num_machines = self.__ssh_manager.get_num_machines()
+        print('Info:', 'List of', num_machines, 'connected machines:')
+        for idx in range(num_machines):
+            print('Info:', '    [' + str(idx) + ']:', self.__ssh_manager.get_machine_name(idx))
+        print('')
+
+    def do_launch(self, arg=None):
+        '''
+        launch idx <count>
+        ''' 
+        arg = arg.split()
+        assert len(arg) == 2
+        idx = int(arg[0])
+        count = int(arg[1])
+        assert idx < self.__ssh_manager.get_num_machines()
+
+        if self.__ssh_manager.get_ioe(idx) is not None:
+            print('Error:', '')
+
+        
+
+    def do_talk(self, arg):
+        '''
+        Usage: talk idx {command}
+        Info:
+            1. if {command} is left empty, will simply refresh stdout
+        '''
+        arg = arg.split()
+        idx = int(arg[0])
+        forward_arg = None
+        if len(arg) > 1:
+            forward_arg = ' '.join(arg[1:])
+
+        assert idx < self.__ssh_manager.get_num_machines()
+
+        print('Info:', 'Forwarding', '"' + str(forward_arg) + '"', 'to', '[' + str(idx) + ']', self.__ssh_manager.get_machine_name(idx))
+
+        # Get stdin, stdout, stderr
+        ioe = self.__ssh_manager.get_ioe(idx)
+        if ioe is None:
+            print('Warning:', 'Machine', idx, 'is not running any jobs')
+            return
+        else:
+            i, o, e = ioe
+
+        # Print stdout before forwarding to stdin
+        print('Info:')
+        o.channel.settimeout(1)
+        try:
+            for line in o:
+                print('        >', line.strip('\n'))
+        except:
+            pass
+        print('        $', forward_arg)
+
+        if forward_arg is not None:
+            # Forward to stdin
+            i.write(forward_arg + '\n')
+            i.flush()
+
+            # Print stdout after forwarding to stdin
+            try:
+                for line in o:
+                    print('        >', line.strip('\n'))
+            except:
+                pass
+
+        print('Info:')
+
+    def do_exit(self, arg=None):
+        print('Info:', 'Closing connections to', self.__ssh_manager.get_num_machines(), 'machines')
+        self.__ssh_manager.close_all()
+        print('Info: Done. Exiting')
+        print('Info:')
+
+        return True
+
+
+def main(args):
+    print('Info:', args)
+    print('Info:')
+
+    if args.machines is None:
+        args.machines = [
+            'ug209.eecg.utoronto.ca', 
+            'ug210.eecg.utoronto.ca', 
+            'ug211.eecg.utoronto.ca', 
+            'ug213.eecg.utoronto.ca', 
+            'ug214.eecg.utoronto.ca', 
+            'ug215.eecg.utoronto.ca', 
+            'ug216.eecg.utoronto.ca', 
+            'ug217.eecg.utoronto.ca', 
+            'ug218.eecg.utoronto.ca', 
+            'ug219.eecg.utoronto.ca', 
+            'ug220.eecg.utoronto.ca', 
+            'ug221.eecg.utoronto.ca', 
+            'ug222.eecg.utoronto.ca', 
+            'ug223.eecg.utoronto.ca', 
+            'ug224.eecg.utoronto.ca']
+    
+    required_machines_count = ((args.count - 1) / args.threshold + 1)
+    if required_machines_count > len(args.machines):
+        print('Error:', 'Not enough machines for running', args.count, 'jobs')
+        print('Info:', '    Current computing power is', args.threshold, '*', len(args.machines), '=', args.threshold * len(args.machines))
+        print('Info:', '    Still needs', int(required_machines_count - len(args.machines)), 'machines')
+        exit(0)
+
+    sm = SSHManager(args.machines, args.username, args.password)
+
+    print('Info:')
+    machine_iter = itertools.cycle(range(sm.get_num_machines()))
+    count_left = args.count
+    while count_left > 0:
+        machine_idx_to_run = next(machine_iter)
+        count_to_use = min(args.threshold, count_left)
+
+        def launcher(idx, machine, machine_name):
+            command = [args.remote_launcher, '--cmd', args.cmd, '--count', count_to_use, '--port', args.port]
+            command = list(map(lambda x: str(x), command))
+            command = ' '.join(command)
+            print('Info:', 'Launching:')
+            print('Info:', '    ' + '@', '[' + str(idx) + ']', machine_name)
+            print('Info:', '    ' + command)
+            return machine.exec_command(command)
+        sm.launch_task_on_machine(machine_idx_to_run, launcher)
+
+        count_left = count_left - count_to_use
+
+    ControlPrompt(sm).cmdloop()
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='super_client.py')
+    parser.add_argument('--remote_launcher', type=str, default='~/ece1747/SimMud/run_client.py', help='Location of remoate_launcher in remote location, aka, run_client.py')
+    parser.add_argument('--count', type=int, required=True, help='Number of processes to deploy')
+    parser.add_argument('--threshold', type=int, default=1000, help='Number of processes to launch for each machine')
+    # Forwarded to remote_launcher
+    parser.add_argument('--port', type=str, default=':1747', help='Server @<IP>:<PORT>')
+    parser.add_argument('--cmd', type=str, default='~/ece1747/SimMud/client', help='Command to run')
+    # SSH-related
+    parser.add_argument('--machines', type=str, nargs='+', help='Pool of machines for SSH')
+    parser.add_argument('--username', type=str, help='Username for SSH')
+    parser.add_argument('--password', type=str, help='Password for SSH')
+    
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+    main(parse_arguments())
+
