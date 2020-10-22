@@ -106,7 +106,7 @@ def main():
     parser.add_argument('--title', type=str, required=True, help="Graph title: Type - N clients, e.g. Static - 100 clients")
     args = parser.parse_args()
     
-    fig = plt.figure()
+    fig = plt.figure(figsize=(24,12))
     suptitle = args.title.split('_')
     suptitle = ' '.join(suptitle)
     fig.suptitle(suptitle, fontsize=16)
@@ -124,10 +124,13 @@ def main():
     ylabel = ["Number", "Time", "Number", "Time", "Time"]
     subfig = []
     pos = [0, 1, 3, 4, 2]
+
     for i in range(5): # 4 columns in total
         subfig.append(fig.add_subplot(2, 3, i+1))
-        subfig[i].title.set_text(title[i])
-        subfig[i].set(xlabel="Iteration",ylabel=ylabel[i])
+
+    for i in range(5):
+        subfig[pos[i]].title.set_text(title[i])
+        subfig[pos[i]].set(xlabel="Iteration",ylabel=ylabel[i])
     
     # read one .csv, and add its data to all subplots using the same style
     for num in range(num_threads):
@@ -137,7 +140,8 @@ def main():
         for i in range(len(avg)):
             subfig[pos[i]].plot(avg[i], style[num])
 
-    plt.show()
+    #plt.show()
+    plt.savefig(args.title)
 
 if __name__ == '__main__':
     main()
