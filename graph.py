@@ -91,17 +91,11 @@ def main():
     parser.add_argument('--iter_num', type=int, required=True, help='Number of iterations to compute the average')
     parser.add_argument('--debug', type=bool, default=False, help='Print debug messages when on')
     parser.add_argument('--raw', type=bool, default=False, help='Raw data')
-    parser.add_argument('--type', type=int, required=True, help="Static (0) or spread (1)")
+    parser.add_argument('--title', type=str, required=True, help="Graph title: Type - N clients, e.g. Static - 100 clients")
     args = parser.parse_args()
     
     fig = plt.figure()
-    if args.type == 0:
-        suptitle = "Static"
-    elif args.type == 1:
-        suptitle = "Spread"
-    else:
-        print("wrong type value!")
-        return 0
+    subptitle = args.title
     fig.suptitle(suptitle, fontsize=16)
 
     server_threads = []
