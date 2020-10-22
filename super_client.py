@@ -1,9 +1,10 @@
 #!/usr/bin/python3
 
 import argparse
+import cmd
 import copy
 import itertools
-from cmd import Cmd
+import random
 
 try:
     import paramiko
@@ -35,9 +36,22 @@ class SSHManager:
         assert idx < self.get_num_machines()
         return self.__ioe[idx]
 
+    def refresh_ioe(self):
+        def check_alive(ioe):
+            if ioe is not None:
+                if not ioe[2].channel.closed:
+                    return ioe
+            else:
+                return None
+        self.__ioe = list(map(check_alive, self.__ioe))
+
     def get_machine_name(self, idx):
         assert idx < self.get_num_machines()
         return self.__machine_names[idx]
+
+    def get_machine_name_str(self, idx):
+        assert idx < self.get_num_machines()
+        return '[' + str(idx) + ']' + ' ' + self.__machine_names[idx]
 
     def launch_task_on_machine(self, idx, task_launcher):
         '''
@@ -65,36 +79,46 @@ class SSHManager:
         self.close_all()
             
 
-class ControlPrompt(Cmd):
-    def __init__(self, ssh_manager):
+class ControlPrompt(cmd.Cmd):
+    def __init__(self, ssh_manager, args):
         '''
         ssh_manager is SSHManager
         '''
         assert isinstance(ssh_manager, SSHManager)
         super(ControlPrompt, self).__init__()
         self.__ssh_manager = ssh_manager
+        self.__args = args
 
     def do_list(self, arg=None):
+        self.__ssh_manager.refresh_ioe()
         num_machines = self.__ssh_manager.get_num_machines()
         print('Info:', 'List of', num_machines, 'connected machines:')
         for idx in range(num_machines):
-            print('Info:', '    [' + str(idx) + ']:', self.__ssh_manager.get_machine_name(idx))
+            print('Info:', '    ' + self.__ssh_manager.get_machine_name_str(idx), ':', 'Running' if self.__ssh_manager.get_ioe(idx) is not None else 'Idling')
         print('')
 
     def do_launch(self, arg=None):
         '''
-        launch idx <count>
+        Usage: launch idx <count>
+        Info:
+            1. Will launch <count> number of processes to machine idx
         ''' 
         arg = arg.split()
-        assert len(arg) == 2
+        if len(arg) != 2:
+            print('Error:', 'Wrong number of arguments')
+            return
+
         idx = int(arg[0])
         count = int(arg[1])
-        assert idx < self.__ssh_manager.get_num_machines()
+        
+        if not self.check_machine_existance(idx):
+            return
 
         if self.__ssh_manager.get_ioe(idx) is not None:
-            print('Error:', '')
+            print('Error:', self.__ssh_manager.get_machine_name_str(idx), 'is already running')
 
-        
+        self.__ssh_manager.launch_task_on_machine(idx, construct_launcher(remote_launcher=self.__args.remote_launcher, cmd=self.__args.cmd, count=count, port=self.__args.port))
+        print('')
 
     def do_talk(self, arg):
         '''
@@ -103,14 +127,20 @@ class ControlPrompt(Cmd):
             1. if {command} is left empty, will simply refresh stdout
         '''
         arg = arg.split()
+        if len(arg) < 1:
+            print('Error:', 'Missing arguments')
+            return
+
         idx = int(arg[0])
         forward_arg = None
         if len(arg) > 1:
             forward_arg = ' '.join(arg[1:])
 
-        assert idx < self.__ssh_manager.get_num_machines()
+        if not self.check_machine_existance(idx):
+            return
 
-        print('Info:', 'Forwarding', '"' + str(forward_arg) + '"', 'to', '[' + str(idx) + ']', self.__ssh_manager.get_machine_name(idx))
+        if forward_arg is not None:
+            print('Info:', 'Forwarding', '"' + str(forward_arg) + '"', 'to', self.__ssh_manager.get_machine_name_str(idx))
 
         # Get stdin, stdout, stderr
         ioe = self.__ssh_manager.get_ioe(idx)
@@ -120,29 +150,33 @@ class ControlPrompt(Cmd):
         else:
             i, o, e = ioe
 
-        # Print stdout before forwarding to stdin
         print('Info:')
-        o.channel.settimeout(1)
-        try:
-            for line in o:
-                print('        >', line.strip('\n'))
-        except:
-            pass
-        print('        $', forward_arg)
 
         if forward_arg is not None:
-            # Forward to stdin
-            i.write(forward_arg + '\n')
-            i.flush()
-
-            # Print stdout after forwarding to stdin
+            # Print stdout before forwarding to stdin
+            o.channel.settimeout(1)
             try:
                 for line in o:
                     print('        >', line.strip('\n'))
             except:
                 pass
 
+            print('        $', forward_arg)
+            # Forward to stdin
+            i.write(forward_arg + '\n')
+            i.flush()
+
+        # Print stdout after forwarding to stdin
+        o.channel.settimeout(3)
+        try:
+            for line in o:
+                print('        >', line.strip('\n'))
+        except:
+            pass
+
         print('Info:')
+        # Reset
+        o.channel.settimeout(None)
 
     def do_exit(self, arg=None):
         print('Info:', 'Closing connections to', self.__ssh_manager.get_num_machines(), 'machines')
@@ -152,6 +186,22 @@ class ControlPrompt(Cmd):
 
         return True
 
+    def check_machine_existance(self, idx):
+        if idx >= self.__ssh_manager.get_num_machines():
+            print('Error:', idx, 'is not a valid Machine ID')
+            return False
+        return True
+
+def construct_launcher(remote_launcher, cmd, count, port):
+    def launcher(idx, machine, machine_name):
+        command = [remote_launcher, '--cmd', cmd, '--count', count, '--port', port]
+        command = list(map(lambda x: str(x), command))
+        command = ' '.join(command)
+        print('Info:', 'Launching:')
+        print('Info:', '    ' + '@', '[' + str(idx) + ']', machine_name)
+        print('Info:', '    ' + command)
+        return machine.exec_command(command)
+    return launcher
 
 def main(args):
     print('Info:', args)
@@ -174,6 +224,7 @@ def main(args):
             'ug222.eecg.utoronto.ca', 
             'ug223.eecg.utoronto.ca', 
             'ug224.eecg.utoronto.ca']
+        random.shuffle(args.machines)
     
     required_machines_count = ((args.count - 1) / args.threshold + 1)
     if required_machines_count > len(args.machines):
@@ -191,19 +242,12 @@ def main(args):
         machine_idx_to_run = next(machine_iter)
         count_to_use = min(args.threshold, count_left)
 
-        def launcher(idx, machine, machine_name):
-            command = [args.remote_launcher, '--cmd', args.cmd, '--count', count_to_use, '--port', args.port]
-            command = list(map(lambda x: str(x), command))
-            command = ' '.join(command)
-            print('Info:', 'Launching:')
-            print('Info:', '    ' + '@', '[' + str(idx) + ']', machine_name)
-            print('Info:', '    ' + command)
-            return machine.exec_command(command)
-        sm.launch_task_on_machine(machine_idx_to_run, launcher)
+        sm.launch_task_on_machine(machine_idx_to_run, construct_launcher(remote_launcher=args.remote_launcher, cmd=args.cmd, count=count_to_use, port=args.port))
 
         count_left = count_left - count_to_use
 
-    ControlPrompt(sm).cmdloop()
+    print('Info:')
+    ControlPrompt(sm, args).cmdloop()
 
 
 def parse_arguments():

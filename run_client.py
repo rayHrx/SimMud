@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 
 import argparse
+import cmd
 import os
 import subprocess
 import sys
-from cmd import Cmd
 
 try:
     import psutil
@@ -26,7 +26,7 @@ def num_fmt(num):
     return f"{num:,}"
 
 
-class ControlPrompt(Cmd):
+class ControlPrompt(cmd.Cmd):
     def __init__(self, process_manager):
         '''
         process_manager is ProcessManager
