@@ -1,7 +1,7 @@
 import csv
 
 
-def calculate_avg(filename, iter_num, debug, raw):
+def calculate_avg(filename, iter_num, debug, raw=False):
     # compute average for each server thread
     avg = [] # (2D) [col][index]
     col_num = 0
