@@ -117,6 +117,7 @@ void logPerformanceMetrics(WorldUpdateModule **wu_modules,const ServerData* sd )
 	ofstream labelFile;
 	labelFile.open(dir_name + "/label.txt");
 	labelFile << string(sd->algorithm_name) + "," + quest_setting + "," + to_string(total_players);
+	labelFile.close();
 
 	for(int i = 0; i < sd->num_threads; i++ ){
 		ofstream logFile;
