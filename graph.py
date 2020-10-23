@@ -38,12 +38,6 @@ def calculate_avg(filename, iter_num, debug, raw):
             if len(row)+1 < col_num:
                 break
 
-            time_per_request = 0
-            time_per_update = 0
-            if float(row[0]) != 0:
-                time_per_request = float(row[1])/float(row[0])
-            if float(row[2]) != 0:
-                time_per_update = float(row[3])/float(row[2])
             row.append(float(row[1]) + float(row[3]))
 
             if raw:
