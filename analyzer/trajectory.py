@@ -3,6 +3,8 @@ import os
 
 import matplotlib.pyplot as plt
 
+import stats
+
 
 def init(parser):
     parser.description='draw graph based on .csv data'
@@ -44,7 +46,7 @@ def main(args):
     for num in range(num_threads):
         filename = server_threads[num]
         # avg (2D) - [col] [avg index]
-        avg = calculate_avg(os.path.join(args.path, filename), args.iter_num, args.debug, args.raw)
+        avg = stats.calculate_avg(os.path.join(args.path, filename), args.iter_num, args.debug, args.raw)
         for i in range(len(avg)):
             subfig[pos[i]].plot(avg[i], style[num])
 
