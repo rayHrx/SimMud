@@ -106,12 +106,19 @@ void logPerformanceMetrics(WorldUpdateModule **wu_modules,const ServerData* sd )
 	for(int i = 0; i < sd->num_threads; ++ i){
 		total_players += sd->wm.players[i].size();	
 	}	
+	string quest_setting = (sd->quest_between/1000 >= 1000) ? "noquest" : "quest";
 
-	string test_run_name = serializeTime(stamp, "UTC_%Y-%m-%d-%H_%M_%S") + "-" + string(sd->algorithm_name) + "-" + to_string(total_players);
+	string test_run_name = serializeTime(stamp, "UTC_%Y-%m-%d-%H_%M_%S");
 	string dir_name = string("metrics/" + test_run_name);
 	if(mkdir(dir_name.c_str(), 0777) == -1){
 		printf(strerror(errno));	
 	}
+
+	ofstream labelFile;
+	labelFile.open(dir_name + "/label.txt");
+	labelFile << string(sd->algorithm_name) + "," + quest_setting + "," + to_string(total_players);
+	labelFile.close();
+
 	for(int i = 0; i < sd->num_threads; i++ ){
 		ofstream logFile;
   		logFile.open(dir_name + "/" + to_string(i) + ".csv");	
