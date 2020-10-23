@@ -53,8 +53,7 @@
 # Make graph 
 
 - Plot Trajectory
-   ```sh
-   python graph.py   
+   ```sh   
    Required options: --path <csv_dir> --iter_num <avg across ? iterations> --title <title of the graph>  
    Optional options: --debug <T/F for debug msg> --raw <T/F for if do avg> 
    #e.g.   
