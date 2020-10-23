@@ -51,12 +51,21 @@
    ```
 
 # Make graph 
-python graph.py   
-Required options: --path <csv_dir> --iter_num <avg across ? iterations> --title <title of the graph>  
-Optional options: --debug <T/F for debug msg> --raw <T/F for if do avg> 
-e.g.   
-python graph.py --type 0 --iter_num 50 --path <static_csv>  
-python graph.py --type 1 --iter_num 50 --path <spread_csv>  
+
+- Plot Trajectory
+   ```sh
+   python graph.py   
+   Required options: --path <csv_dir> --iter_num <avg across ? iterations> --title <title of the graph>  
+   Optional options: --debug <T/F for debug msg> --raw <T/F for if do avg> 
+   #e.g.   
+   python analyzer t --iter_num 50 --path <static_csv>  
+   ```
+    
+- Plot Scalability
+   ```sh
+   python analyzer s --gui
+   python analyzer s --output=./
+   ```
 
 # Two load balancing algorithms to be implemented
 ## 1 - Spread
