@@ -3,7 +3,7 @@ import os
 
 import matplotlib.pyplot as plt
 
-import stats
+import utility
 
 
 def init(parser):
@@ -26,7 +26,7 @@ def main(args):
     
     # read one .csv, and add its data to all subplots using the same style
     # avgs5db[thread_id][dataline][avged_point]
-    avgs5db = [stats.calculate_avg(os.path.join(args.path, thread_file), args.iter_num, args.debug, args.raw) for thread_file in server_threads]
+    avgs5db = [utility.calculate_avg(os.path.join(args.path, thread_file), args.iter_num, args.debug, args.raw) for thread_file in server_threads]
 
     show_fig(args.gui, args.output, args.title, avgs5db)
 

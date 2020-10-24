@@ -6,8 +6,8 @@ import os
 
 import matplotlib.pyplot as plt
 
-import stats
 import trajectory
+import utility
 
 
 def init(parser):
@@ -144,7 +144,7 @@ def parse_run_metric(run_name, args):
     largest_update_intervals = list()
     avgs5db = list()
     for csv_filename in csv_filenames:
-        avg = stats.calculate_avg(os.path.join(run_metric_dir, csv_filename), args.iter_num, args.debug)
+        avg = utility.calculate_avg(os.path.join(run_metric_dir, csv_filename), args.iter_num, args.debug)
         avgs5db.append(avg)
         update_interval = avg[4]
         large_ui = max(update_interval)
