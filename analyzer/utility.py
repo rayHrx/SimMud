@@ -2,6 +2,10 @@ import csv
 import os
 
 
+def genereate_run_name(spread_static, quest_noquest, nclient):
+    return quest_noquest + '_' + spread_static + '_' + str(nclient) + '_clients'
+
+
 def parse_label_file(run_metric_dir):
     '''
     (static/spread, quest/noquest, nclient) if data available

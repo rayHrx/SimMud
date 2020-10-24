@@ -77,19 +77,19 @@ def main(args):
         run_name = run_data[2]
         avgs5db = run_data[3]
         print('Info:    ', quest_noquest, spread_static, 'nclient=' + str(nclient), 'update_interval=' + str(update_interval), run_name)
-        titlename = quest_noquest + '_' + spread_static + '_' + str(nclient) + '_clients'
+        titlename = utility.genereate_run_name(spread_static, quest_noquest, nclient)
         trajectory.show_fig(True, None, titlename, avgs5db, run_name, figsize)
 
 
     fig.canvas.callbacks.connect('pick_event', on_pick)
 
-    if args.gui:
-        plt.show()
-
     if args.output:
         filename = os.path.join(args.output, figname)
         plt.savefig(filename)
         print('Info:', 'Chart is dumped to', filename)
+
+    if args.gui:
+        plt.show()
 
 
 def plot_chart(ax, quest_noquest, single_chart_database):
