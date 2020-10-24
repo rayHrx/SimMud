@@ -53,18 +53,21 @@ def main(args):
     for idx, quest_noquest in enumerate(database):
         plot_chart(fig.add_subplot(1, len(database), idx+1), quest_noquest, database[quest_noquest])
 
+
     def on_pick(event):
         print('Info:')
         artist = event.artist
         xmouse, ymouse = event.mouseevent.xdata, event.mouseevent.ydata
         x, y = artist.get_xdata(), artist.get_ydata()
         ind = event.ind
-        print('Info:', 'x, y of mouse: {:.2f},{:.2f}'.format(xmouse, ymouse))
-        print('Info:', '{} vertices picked'.format(len(ind)))
-        if len(ind) != 1:
-            print('Info:', '    Pick between vertices {} and {}'.format(min(ind), max(ind)+1))
-
         indx = ind[0]
+        print('Info:', 'Clicked: {:.2f}, {:.2f}'.format(xmouse, ymouse))
+        print('Info:', 'Picked {} vertices: '.format(len(ind)), end='')
+        if len(ind) != 1:
+            print('Pick between vertices {} and {}'.format(min(ind), max(ind)+1))
+        else:
+            print('Picked vertice index:', indx)
+
         spread_static = artist.get_label()
         quest_noquest = artist.axes.get_title()
         nclient = x[indx]
@@ -73,10 +76,10 @@ def main(args):
         assert (nclient, update_interval) == (*run_data[0:2],)
         run_name = run_data[2]
         avgs5db = run_data[3]
-        print('Info:', spread_static, quest_noquest, 'nclient=' + str(nclient), 'update_interval=' + str(update_interval), 'run=' + run_name)
-        print('indx', indx)
+        print('Info:    ', spread_static, quest_noquest, 'nclient=' + str(nclient), 'update_interval=' + str(update_interval), run_name)
         titlename = quest_noquest + '_' + spread_static + '_' + str(nclient) + '_clients'
         trajectory.show_fig(True, None, titlename, avgs5db, run_name, figsize)
+
 
     fig.canvas.callbacks.connect('pick_event', on_pick)
 
@@ -103,25 +106,6 @@ def plot_chart(ax, quest_noquest, single_chart_database):
     ax.grid(axis='y', linestyle='-')
 
 
-def parse_label_file(run_metric_dir):
-    '''
-    (static/spread, quest/noquest, nclient) if data available
-    None if not
-    '''
-    label_file_name = 'label.txt'
-    label_file_path = os.path.join(run_metric_dir, label_file_name)
-    
-    if not os.path.isfile(label_file_path):
-        return None
-    
-    with open(label_file_path, mode='r') as f:
-        csv_reader = csv.reader(f, delimiter=',')
-        row = next(iter(csv_reader))
-
-        assert len(row) == 3
-        return row
-
-
 def parse_run_metric(run_name, args):
     '''
     (largest_update_interval, static/spread, quest/noquest, nclient, run_name, avgs5db) if data available
@@ -132,7 +116,7 @@ def parse_run_metric(run_name, args):
     run_metric_dir = os.path.join(args.path, run_name)
 
     # Label file
-    label_data = parse_label_file(run_metric_dir)
+    label_data = utility.parse_label_file(run_metric_dir)
     if label_data is None:
         print('Error:', run_metric_dir, 'does not have a valid label file. Data dropped')
         return None

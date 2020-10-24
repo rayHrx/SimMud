@@ -31,6 +31,7 @@ def main(args):
     show_fig(args.gui, args.output, args.title, avgs5db)
 
 
+# Can pass in all the labels, and automatically generate the name for the figure
 def show_fig(gui, output, title, avgs5db, figname=None, figsize=(24,12)):
     fig = plt.figure(figname, figsize=figsize)
     suptitle = title.split('_')

@@ -1,4 +1,24 @@
 import csv
+import os
+
+
+def parse_label_file(run_metric_dir):
+    '''
+    (static/spread, quest/noquest, nclient) if data available
+    None if not
+    '''
+    label_file_name = 'label.txt'
+    label_file_path = os.path.join(run_metric_dir, label_file_name)
+    
+    if not os.path.isfile(label_file_path):
+        return None
+    
+    with open(label_file_path, mode='r') as f:
+        csv_reader = csv.reader(f, delimiter=',')
+        row = next(iter(csv_reader))
+
+        assert len(row) == 3
+        return row
 
 
 def calculate_avg(filename, iter_num, debug, raw=False):
