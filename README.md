@@ -53,17 +53,15 @@
 # Make graph 
 
 - Plot Trajectory
-   ```sh   
-   Required options: --path <csv_dir> --iter_num <avg across ? iterations> --title <title of the graph>  
-   Optional options: --debug <T/F for debug msg> --raw <T/F for if do avg> 
-   #e.g.   
-   python analyzer t --iter_num 50 --path <static_csv>  
+   ```sh 
+   python analyzer t --iter_num 50 --path <run> --gui
+   python analyzer trajectory --path=<run> --output=
    ```
     
 - Plot Scalability
    ```sh
    python analyzer s --gui
-   python analyzer s --output=./
+   python analyzer scalability --output=
    ```
 
 # Two load balancing algorithms to be implemented
