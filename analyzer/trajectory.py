@@ -9,9 +9,10 @@ import stats
 def init(parser):
     parser.description='draw graph based on .csv data'
     parser.add_argument('--path', type=str, required=True, help='Path to the directory of .csv files')
-    parser.add_argument('--iter_num', type=int, required=True, help='Number of iterations to compute the average')
-    parser.add_argument('--debug', type=bool, default=False, help='Print debug messages when on')
-    parser.add_argument('--raw', type=bool, default=False, help='Raw data')
+    parser.add_argument('--iter_num', type=int, default=100, help='Moving average window size')
+    parser.add_argument('--debug', action='store_true', help='Print debug messages when on')
+    parser.add_argument('--gui', action='store_true', help='Open charts on GUI')
+    parser.add_argument('--raw', action='store_true', help='Raw data')
     parser.add_argument('--title', type=str, required=True, help="Graph title: Type - N clients, e.g. Static - 100 clients")
 
 
@@ -50,5 +51,6 @@ def main(args):
         for i in range(len(avg)):
             subfig[pos[i]].plot(avg[i], style[num])
 
-    #plt.show()
+    if args.gui:
+        plt.show()
     plt.savefig(args.title)
