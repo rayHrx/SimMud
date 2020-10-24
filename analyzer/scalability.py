@@ -7,6 +7,7 @@ import os
 import matplotlib.pyplot as plt
 
 import stats
+import trajectory
 
 
 def init(parser):
@@ -19,19 +20,22 @@ def init(parser):
 
 
 def main(args):
-    run_metric_dirs = list(filter(os.path.isdir, [os.path.join(args.path, o) for o in os.listdir(args.path)]))
-    print('Info:', 'Found metric data of ', len(run_metric_dirs), 'runs')
+    run_names = [o for o in os.listdir(args.path) if os.path.isdir(os.path.join(args.path, o))]
+    print('Info:', 'Found metric data of ', len(run_names), 'runs')
 
-    # [(largest_update_interval, static/spread, quest/noquest, #client)]
-    dataset = [parse_run_metric(run_metric_dir, args) for run_metric_dir in run_metric_dirs]
+    # [(largest_update_interval, static/spread, quest/noquest, nclient, run_name, avgs5db)]
+    dataset = [parse_run_metric(run_name, args) for run_name in run_names]
     dataset = [data for data in dataset if data]
     
     # Reorganize data
-    # {quest_noquest: {static_spread: [(#client, largest_update_interval)]}}
+    # {quest_noquest: {static_spread: sorted [(nclient, largest_update_interval, run_name, avgs5db)]}}
     database = collections.defaultdict(lambda:collections.defaultdict(list))
     for row in dataset:
-        largest_update_interval, static_spread, quest_noquest, nclient = row
-        database[quest_noquest][static_spread].append((int(nclient), largest_update_interval))
+        largest_update_interval, static_spread, quest_noquest, nclient, run_name, avgs5db = row
+        database[quest_noquest][static_spread].append((int(nclient), largest_update_interval, run_name, avgs5db))
+    for datachart in database.values():
+        for dataline in datachart.values():
+            dataline.sort(key=lambda x: (x[0], x[1]))
     
     # Printing Stats
     print('Info:')
@@ -42,27 +46,56 @@ def main(args):
     print('Info:', '    ' + str(len(dataset)), 'data points are available in TOTAL')
     print('Info:')
 
-    fig = plt.figure('Scalability Charts', figsize=(16, 8))
+    figsize = (16,8)
+    figname = 'scalability_' + str(len(dataset)) + '_' + datetime.datetime.now().strftime('%y%m%d_%H%M%S')
+    fig = plt.figure(figname, figsize=figsize)
     fig.suptitle('Scalability of Update Interval Time with varying Number of Clients', fontsize=16)
     for idx, quest_noquest in enumerate(database):
         plot_chart(fig.add_subplot(1, len(database), idx+1), quest_noquest, database[quest_noquest])
-    
+
+    def on_pick(event):
+        print('Info:')
+        artist = event.artist
+        xmouse, ymouse = event.mouseevent.xdata, event.mouseevent.ydata
+        x, y = artist.get_xdata(), artist.get_ydata()
+        ind = event.ind
+        print('Info:', 'x, y of mouse: {:.2f},{:.2f}'.format(xmouse, ymouse))
+        print('Info:', '{} vertices picked'.format(len(ind)))
+        if len(ind) != 1:
+            print('Info:', '    Pick between vertices {} and {}'.format(min(ind), max(ind)+1))
+
+        indx = ind[0]
+        spread_static = artist.get_label()
+        quest_noquest = artist.axes.get_title()
+        nclient = x[indx]
+        update_interval = y[indx]
+        run_data = database[quest_noquest][spread_static][indx]
+        assert (nclient, update_interval) == (*run_data[0:2],)
+        run_name = run_data[2]
+        avgs5db = run_data[3]
+        print('Info:', spread_static, quest_noquest, 'nclient=' + str(nclient), 'update_interval=' + str(update_interval), 'run=' + run_name)
+        print('indx', indx)
+        titlename = quest_noquest + '_' + spread_static + '_' + str(nclient) + '_clients'
+        trajectory.show_fig(True, None, titlename, avgs5db, run_name, figsize)
+
+    fig.canvas.callbacks.connect('pick_event', on_pick)
+
     if args.gui:
         plt.show()
 
     if args.output:
-        filename = 'scalability_' + str(len(dataset)) + '_' + datetime.datetime.now().strftime('%y%m%d_%H%M%S') + '.png'
+        filename = os.path.join(args.output, figname)
         plt.savefig(filename)
         print('Info:', 'Chart is dumped to', filename)
 
 
 def plot_chart(ax, quest_noquest, single_chart_database):
     '''
-    single_chart_database = {static_spread: [(#client, largest_update_interval)]}
+    single_chart_database = {static_spread: sorted [(nclient, largest_update_interval, run_name, avgs5db)]}
     '''
     ax.set_title(quest_noquest)
     for static_spread, dataline in single_chart_database.items():
-        ax.plot(*zip(*sorted(dataline)), label=static_spread, marker='.')
+        ax.plot(*(list(zip(*dataline))[0:2]), label=static_spread, marker='o', picker=True, pickradius=4)
     ax.legend()
     ax.set(xlabel='Number of Clients', ylabel='Update Interval Time (ms)')
     ax.set_ylim(bottom=0.)
@@ -72,7 +105,7 @@ def plot_chart(ax, quest_noquest, single_chart_database):
 
 def parse_label_file(run_metric_dir):
     '''
-    (static/spread, quest/noquest, #client) if data available
+    (static/spread, quest/noquest, nclient) if data available
     None if not
     '''
     label_file_name = 'label.txt'
@@ -89,12 +122,14 @@ def parse_label_file(run_metric_dir):
         return row
 
 
-def parse_run_metric(run_metric_dir, args):
+def parse_run_metric(run_name, args):
     '''
-    (largest_update_interval, static/spread, quest/noquest, #client) if data available
+    (largest_update_interval, static/spread, quest/noquest, nclient, run_name, avgs5db) if data available
     None if data is not available
     '''
-    print('Info:', 'Parsing', run_metric_dir)
+    print('Info:', 'Parsing', run_name)
+
+    run_metric_dir = os.path.join(args.path, run_name)
 
     # Label file
     label_data = parse_label_file(run_metric_dir)
@@ -104,10 +139,13 @@ def parse_run_metric(run_metric_dir, args):
 
     # CSV files
     csv_filenames = [o for o in os.listdir(run_metric_dir) if os.path.isfile(os.path.join(run_metric_dir, o)) and o[-4:] == '.csv']
+    csv_filenames.sort()
 
     largest_update_intervals = list()
+    avgs5db = list()
     for csv_filename in csv_filenames:
         avg = stats.calculate_avg(os.path.join(run_metric_dir, csv_filename), args.iter_num, args.debug)
+        avgs5db.append(avg)
         update_interval = avg[4]
         large_ui = max(update_interval)
         if args.debug:
@@ -122,4 +160,4 @@ def parse_run_metric(run_metric_dir, args):
     print('Info:', '    (', end='')
     print(largest_update_interval, *label_data, sep=', ', end='')
     print(')')
-    return (largest_update_interval, *label_data)
+    return (largest_update_interval, *label_data, run_name, avgs5db)

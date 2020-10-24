@@ -18,16 +18,24 @@ def init(parser):
 
 
 def main(args):
-    fig = plt.figure(figsize=(24,12))
-    suptitle = args.title.split('_')
-    suptitle = ' '.join(suptitle)
-    fig.suptitle(suptitle, fontsize=16)
-
     server_threads = []
     for file in os.listdir(args.path):
         if file.endswith(".csv") and "avg" not in file:
             server_threads.append(file)
-    num_threads = len(server_threads)
+    server_threads.sort()
+    
+    # read one .csv, and add its data to all subplots using the same style
+    # avgs5db[thread_id][dataline][avged_point]
+    avgs5db = [stats.calculate_avg(os.path.join(args.path, thread_file), args.iter_num, args.debug, args.raw) for thread_file in server_threads]
+
+    show_fig(args.gui, args.output, args.title, avgs5db)
+
+
+def show_fig(gui, output, title, avgs5db, figname=None, figsize=(24,12)):
+    fig = plt.figure(figname, figsize=figsize)
+    suptitle = title.split('_')
+    suptitle = ' '.join(suptitle)
+    fig.suptitle(suptitle, fontsize=16)
 
     # plot the same column across all server threads on one subplot
     # subfig[i] holds column i
@@ -45,14 +53,12 @@ def main(args):
         subfig[pos[i]].set(xlabel="Iteration",ylabel=ylabel[i])
     
     # read one .csv, and add its data to all subplots using the same style
-    for num in range(num_threads):
-        filename = server_threads[num]
+    for num, avg in enumerate(avgs5db):
         # avg (2D) - [col] [avg index]
-        avg = stats.calculate_avg(os.path.join(args.path, filename), args.iter_num, args.debug, args.raw)
         for i in range(len(avg)):
             subfig[pos[i]].plot(avg[i], style[num])
 
-    if args.gui:
+    if gui:
         plt.show()
-    if args.output:
-        plt.savefig(os.path.join(args.output, args.title))
+    if output:
+        plt.savefig(os.path.join(output, title))
