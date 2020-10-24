@@ -76,7 +76,7 @@ def main(args):
         assert (nclient, update_interval) == (*run_data[0:2],)
         run_name = run_data[2]
         avgs5db = run_data[3]
-        print('Info:    ', spread_static, quest_noquest, 'nclient=' + str(nclient), 'update_interval=' + str(update_interval), run_name)
+        print('Info:    ', quest_noquest, spread_static, 'nclient=' + str(nclient), 'update_interval=' + str(update_interval), run_name)
         titlename = quest_noquest + '_' + spread_static + '_' + str(nclient) + '_clients'
         trajectory.show_fig(True, None, titlename, avgs5db, run_name, figsize)
 
