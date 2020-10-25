@@ -165,6 +165,10 @@ class ProcessManager:
 
         return (cur_idxs, prev_idxs)
 
+    def __del__(self):
+        for proc in filter(None, self.__processes):
+            proc.terminate()
+
 
 def main(args):
     print('Info:', args)
