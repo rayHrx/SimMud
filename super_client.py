@@ -97,7 +97,35 @@ class ControlPrompt(cmd.Cmd):
             print('Info:', '    ' + self.__ssh_manager.get_machine_name_str(idx), ':', 'Running' if self.__ssh_manager.get_ioe(idx) is not None else 'Idling')
         print('')
 
-    def do_launch(self, arg=None):
+    def do_run(self, arg):
+        '''
+        Usage: run idx <command>
+        '''
+        arg = arg.split()
+        if len(arg) < 2:
+            print('Error:', 'Wrong number of arguments')
+            return
+
+        idx = int(arg[0])
+
+        if not self.check_machine_existance(idx):
+            return
+
+        if self.__ssh_manager.get_ioe(idx) is not None:
+            print('Error:', self.__ssh_manager.get_machine_name_str(idx), 'is already running')
+
+        def launcher(idx, machine, machine_name):
+            command = arg[1:]
+            command = list(map(lambda x: str(x), command))
+            command = ' '.join(command)
+            print('Info:', 'Launching:')
+            print('Info:', '    ' + '@', '[' + str(idx) + ']', machine_name)
+            print('Info:', '    ' + command)
+            return machine.exec_command(command, get_pty=True)
+        self.__ssh_manager.launch_task_on_machine(idx, launcher)
+        print('')
+
+    def do_launch(self, arg):
         '''
         Usage: launch idx <count>
         Info:
@@ -227,26 +255,32 @@ def main(args):
             'ug223.eecg.utoronto.ca', 
             'ug224.eecg.utoronto.ca']
         random.shuffle(args.machines)
+
+    if args.admin:
+        print('Info:', 'Running in admin mode')
     
-    required_machines_count = (int((args.count - 1) / args.threshold) + 1)
-    if required_machines_count > len(args.machines):
-        print('Error:', 'Not enough machines for running', args.count, 'jobs')
-        print('Info:', '    Current computing power is', args.threshold, '*', len(args.machines), '=', args.threshold * len(args.machines))
-        print('Info:', '    Still needs', int(required_machines_count - len(args.machines)), 'machines')
-        exit(0)
+    if not args.admin:
+        print('Info:', 'Runing a total of', args.count, 'processes')
+        required_machines_count = (int((args.count - 1) / args.threshold) + 1)
+        if required_machines_count > len(args.machines):
+            print('Error:', 'Not enough machines for running', args.count, 'jobs')
+            print('Info:', '    Current computing power is', args.threshold, '*', len(args.machines), '=', args.threshold * len(args.machines))
+            print('Info:', '    Still needs', int(required_machines_count - len(args.machines)), 'machines')
+            exit(0)
 
     sm = SSHManager(args.machines, args.username, args.password)
 
-    print('Info:')
-    machine_iter = itertools.cycle(range(sm.get_num_machines()))
-    count_left = args.count
-    while count_left > 0:
-        machine_idx_to_run = next(machine_iter)
-        count_to_use = min(args.threshold, count_left)
+    if not args.admin:
+        print('Info:')
+        machine_iter = itertools.cycle(range(sm.get_num_machines()))
+        count_left = args.count
+        while count_left > 0:
+            machine_idx_to_run = next(machine_iter)
+            count_to_use = min(args.threshold, count_left)
 
-        sm.launch_task_on_machine(machine_idx_to_run, construct_launcher(remote_launcher=args.remote_launcher, cmd=args.cmd, count=count_to_use, port=args.port, stdout=args.stdout))
+            sm.launch_task_on_machine(machine_idx_to_run, construct_launcher(remote_launcher=args.remote_launcher, cmd=args.cmd, count=count_to_use, port=args.port, stdout=args.stdout))
 
-        count_left = count_left - count_to_use
+            count_left = count_left - count_to_use
 
     print('Info:')
     ControlPrompt(sm, args).cmdloop()
@@ -254,8 +288,9 @@ def main(args):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='super_client.py')
+    parser.add_argument('--admin', action='store_true', help='SSH to all the machines, but without executing any commands')
     parser.add_argument('--remote_launcher', type=str, default='~/ece1747/SimMud/run_client.py', help='Location of remoate_launcher in remote location, aka, run_client.py')
-    parser.add_argument('--count', type=int, required=True, help='Number of processes to deploy')
+    parser.add_argument('--count', type=int, default=1000, help='Number of processes to deploy')
     parser.add_argument('--threshold', type=int, default=1000, help='Number of processes to launch for each machine')
     # Forwarded to remote_launcher
     parser.add_argument('--port', type=str, default=':1747', help='Forward to remote_launcher Server @<IP>:<PORT>')
