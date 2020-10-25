@@ -226,7 +226,7 @@ def main(args):
             'ug224.eecg.utoronto.ca']
         random.shuffle(args.machines)
     
-    required_machines_count = ((args.count - 1) / args.threshold + 1)
+    required_machines_count = (int((args.count - 1) / args.threshold) + 1)
     if required_machines_count > len(args.machines):
         print('Error:', 'Not enough machines for running', args.count, 'jobs')
         print('Info:', '    Current computing power is', args.threshold, '*', len(args.machines), '=', args.threshold * len(args.machines))
@@ -260,12 +260,11 @@ def parse_arguments():
     parser.add_argument('--cmd', type=str, default='~/ece1747/SimMud/client', help='Command to run')
     # SSH-related
     parser.add_argument('--machines', type=str, nargs='+', help='Pool of machines for SSH')
-    parser.add_argument('--username', type=str, help='Username for SSH')
-    parser.add_argument('--password', type=str, help='Password for SSH')
+    parser.add_argument('--username', type=str, required=True, help='Username for SSH')
+    parser.add_argument('--password', type=str, required=True, help='Password for SSH')
     
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     main(parse_arguments())
-
