@@ -117,7 +117,7 @@ class ControlPrompt(cmd.Cmd):
         if self.__ssh_manager.get_ioe(idx) is not None:
             print('Error:', self.__ssh_manager.get_machine_name_str(idx), 'is already running')
 
-        self.__ssh_manager.launch_task_on_machine(idx, construct_launcher(remote_launcher=self.__args.remote_launcher, cmd=self.__args.cmd, count=count, port=self.__args.port))
+        self.__ssh_manager.launch_task_on_machine(idx, construct_launcher(remote_launcher=self.__args.remote_launcher, cmd=self.__args.cmd, count=count, port=self.__args.port, stdout=self.__args.stdout))
         print('')
 
     def do_talk(self, arg):
@@ -192,15 +192,17 @@ class ControlPrompt(cmd.Cmd):
             return False
         return True
 
-def construct_launcher(remote_launcher, cmd, count, port):
+def construct_launcher(remote_launcher, cmd, count, port, stdout):
     def launcher(idx, machine, machine_name):
         command = [remote_launcher, '--cmd', cmd, '--count', count, '--port', port]
+        if stdout:
+            command.append('--stdout')
         command = list(map(lambda x: str(x), command))
         command = ' '.join(command)
         print('Info:', 'Launching:')
         print('Info:', '    ' + '@', '[' + str(idx) + ']', machine_name)
         print('Info:', '    ' + command)
-        return machine.exec_command(command)
+        return machine.exec_command(command, get_pty=True)
     return launcher
 
 def main(args):
@@ -242,7 +244,7 @@ def main(args):
         machine_idx_to_run = next(machine_iter)
         count_to_use = min(args.threshold, count_left)
 
-        sm.launch_task_on_machine(machine_idx_to_run, construct_launcher(remote_launcher=args.remote_launcher, cmd=args.cmd, count=count_to_use, port=args.port))
+        sm.launch_task_on_machine(machine_idx_to_run, construct_launcher(remote_launcher=args.remote_launcher, cmd=args.cmd, count=count_to_use, port=args.port, stdout=args.stdout))
 
         count_left = count_left - count_to_use
 
@@ -256,8 +258,9 @@ def parse_arguments():
     parser.add_argument('--count', type=int, required=True, help='Number of processes to deploy')
     parser.add_argument('--threshold', type=int, default=1000, help='Number of processes to launch for each machine')
     # Forwarded to remote_launcher
-    parser.add_argument('--port', type=str, default=':1747', help='Server @<IP>:<PORT>')
-    parser.add_argument('--cmd', type=str, default='~/ece1747/SimMud/client', help='Command to run')
+    parser.add_argument('--port', type=str, default=':1747', help='Forward to remote_launcher Server @<IP>:<PORT>')
+    parser.add_argument('--cmd', type=str, default='~/ece1747/SimMud/client', help='Forward to remote_launcher --cmd')
+    parser.add_argument('--stdout', action='store_true', help='Forward to remote_launcher --stdout')
     # SSH-related
     parser.add_argument('--machines', type=str, nargs='+', help='Pool of machines for SSH')
     parser.add_argument('--username', type=str, required=True, help='Username for SSH')
