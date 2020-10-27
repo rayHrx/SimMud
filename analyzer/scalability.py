@@ -2,7 +2,9 @@ import argparse
 import collections
 import csv
 import datetime
+import multiprocessing
 import os
+import time
 
 import matplotlib.pyplot as plt
 
@@ -21,16 +23,19 @@ def init(parser):
 
 def main(args):
     run_names = [o for o in os.listdir(args.path) if os.path.isdir(os.path.join(args.path, o))]
-    print('Info:', 'Found metric data of ', len(run_names), 'runs')
+    print('Info:', 'Found metric data of', len(run_names), 'runs')
 
-    # [(largest_update_interval, static/spread, quest/noquest, nclient, run_name, avgs5db)]
-    dataset = [parse_run_metric(run_name, args) for run_name in run_names]
-    dataset = [data for data in dataset if data]
-    
+    print('Info:', 'Parsing in parallel...')
+    start = time.time()
+    dataset = multiprocessing.Pool().map(parse_run_metric_wrapper, map(lambda run_name: (run_name, args), run_names))
+    end = time.time()
+    print('Info:')
+    print('Info:', 'Parsing took', end - start, 'seconds')
+
     # Reorganize data
     # {quest_noquest: {static_spread: sorted [(nclient, largest_update_interval, run_name, avgs5db)]}}
     database = collections.defaultdict(lambda:collections.defaultdict(list))
-    for row in dataset:
+    for row in filter(None, dataset):
         largest_update_interval, static_spread, quest_noquest, nclient, run_name, avgs5db = row
         database[quest_noquest][static_spread].append((int(nclient), largest_update_interval, run_name, avgs5db))
     for datachart in database.values():
@@ -106,19 +111,24 @@ def plot_chart(ax, quest_noquest, single_chart_database):
     ax.grid(axis='y', linestyle='-')
 
 
+def parse_run_metric_wrapper(single_arg):
+    return parse_run_metric(*single_arg)
+
+
 def parse_run_metric(run_name, args):
     '''
     (largest_update_interval, static/spread, quest/noquest, nclient, run_name, avgs5db) if data available
     None if data is not available
     '''
-    print('Info:', 'Parsing', run_name)
+    if args.debug:
+        print('Debug:', 'Parsing', run_name)
 
     run_metric_dir = os.path.join(args.path, run_name)
 
     # Label file
     label_data = utility.parse_label_file(run_metric_dir)
     if label_data is None:
-        print('Error:', run_metric_dir, 'does not have a valid label file. Data dropped')
+        print('Error:', 'Parsing', run_name + '.', run_metric_dir, 'does not have a valid label file. Data dropped')
         return None
 
     # CSV files
@@ -137,11 +147,10 @@ def parse_run_metric(run_name, args):
         largest_update_intervals.append(large_ui)
     
     if len(largest_update_intervals) == 0:
-        print('Error:', run_metric_dir, 'does not have any valid csv files. Data dropped')
+        print('Error:', 'Parsing', run_name + '.', run_metric_dir, 'does not have any valid csv files. Data dropped')
         return None
     largest_update_interval = max(largest_update_intervals)
 
-    print('Info:', '    (', end='')
-    print(largest_update_interval, *label_data, sep=', ', end='')
-    print(')')
+    info_str = 'Info: Parsing ' + run_name + ' (' + '{0}'.format(', '.join(['{:.2f}'.format(largest_update_interval)] + label_data)) + ')'
+    print(info_str)
     return (largest_update_interval, *label_data, run_name, avgs5db)
