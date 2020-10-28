@@ -170,11 +170,18 @@ def check_data_validity(dataset):
     '''
     (largest_update_interval, static/spread, quest/noquest, nclient, run_name, avgs5db)
     '''
-    datasize_list = [(run_name, max(map(lambda perthread: len(perthread[4]), avgs5db))) for _, _, _, _, run_name, avgs5db in dataset]
-    _, size_list = zip(*datasize_list)
+    datasize_list = [(run_name, (static_spread, quest_noquest, nclient), max(map(lambda perthread: len(perthread[4]), avgs5db))) for _, static_spread, quest_noquest, nclient, run_name, avgs5db in dataset]
+    datasize_list.sort(key=lambda p: p[2])
+
+    _, _, size_list = zip(*datasize_list)
+
     size_mean = statistics.mean(size_list)
     size_pstdev = statistics.pstdev(size_list)
     print('Info:', 'Data sizes have', 'mean=' + float_fmt(size_mean), 'pstddev=' + float_fmt(size_pstdev))
-    for run_name, size in datasize_list:
-        if size < size_mean - size_pstdev:
-            print('Warning:', run_name, 'only contains', size, 'data')
+
+    size_warning_threshold = size_mean - 1.5 * size_pstdev
+    warning_list = [(run_name, label, size) for run_name, label, size in datasize_list if size < size_warning_threshold]
+    
+    for run_name, label, size in warning_list:
+        print('Warning:', run_name, label, 'only contains', size, 'data')
+    print('Warning:', len(warning_list), 'data sets don\'t have enough data')
