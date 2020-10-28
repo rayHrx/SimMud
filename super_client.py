@@ -3,6 +3,7 @@
 import argparse
 import cmd
 import copy
+import datetime
 import itertools
 import random
 import time
@@ -81,12 +82,13 @@ class SSHManager:
             
 
 class ControlPrompt(cmd.Cmd):
-    def __init__(self, ssh_manager, args):
+    def __init__(self, launch_time, ssh_manager, args):
         '''
         ssh_manager is SSHManager
         '''
         assert isinstance(ssh_manager, SSHManager)
         super(ControlPrompt, self).__init__()
+        self.__launch_time = launch_time
         self.__ssh_manager = ssh_manager
         self.__args = args
 
@@ -206,6 +208,10 @@ class ControlPrompt(cmd.Cmd):
         print('Info:')
         # Reset
         o.channel.settimeout(None)
+    
+    def do_time(self, arg=None):
+        print_launch_time(self.__launch_time, True)
+        print('Info:')
 
     def do_exit(self, arg=None):
         print('Info:', 'Closing connections to', self.__ssh_manager.get_num_machines(), 'machines')
@@ -233,6 +239,13 @@ def construct_launcher(remote_launcher, cmd, count, port, stdout):
         print('Info:', '    ' + command)
         return machine.exec_command(command, get_pty=True)
     return launcher
+
+def print_launch_time(launch_time, show_elapsed=False):
+    print('Info:', 'Launch :', launch_time.strftime('%Y-%m-%d %H:%M:%S'))
+    if show_elapsed:
+        now = datetime.datetime.now()
+        print('Info:', 'Now    :', now.strftime('%Y-%m-%d %H:%M:%S'))
+        print('Info:', 'Elasped:', '{:.2f}'.format((now - launch_time).total_seconds()), 'seconds')
 
 def main(args):
     print('Info:', args)
@@ -270,6 +283,9 @@ def main(args):
             exit(0)
 
     sm = SSHManager(args.machines, args.username, args.password)
+    launch_time = datetime.datetime.now()
+    print('Info:')
+    print_launch_time(launch_time)
 
     if not args.admin:
         print('Info:')
@@ -285,7 +301,7 @@ def main(args):
             count_left = count_left - count_to_use
 
     print('Info:')
-    ControlPrompt(sm, args).cmdloop()
+    ControlPrompt(launch_time, sm, args).cmdloop()
 
 
 def parse_arguments():
