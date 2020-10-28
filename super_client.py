@@ -253,9 +253,9 @@ def main(args):
 
     if args.machines is None:
         args.machines = [
-            'ug209.eecg.utoronto.ca', 
             'ug210.eecg.utoronto.ca', 
-            'ug211.eecg.utoronto.ca', 
+            'ug211.eecg.utoronto.ca',
+            'ug212.eecg.utoronto.ca',
             'ug213.eecg.utoronto.ca', 
             'ug214.eecg.utoronto.ca', 
             'ug215.eecg.utoronto.ca', 
@@ -267,7 +267,23 @@ def main(args):
             'ug221.eecg.utoronto.ca', 
             'ug222.eecg.utoronto.ca', 
             'ug223.eecg.utoronto.ca', 
-            'ug224.eecg.utoronto.ca']
+            'ug224.eecg.utoronto.ca',
+            'ug225.eecg.utoronto.ca',
+            'ug226.eecg.utoronto.ca',
+            'ug227.eecg.utoronto.ca',
+            'ug228.eecg.utoronto.ca',
+            'ug229.eecg.utoronto.ca',
+            'ug230.eecg.utoronto.ca',
+            'ug231.eecg.utoronto.ca',
+            'ug232.eecg.utoronto.ca',
+            'ug233.eecg.utoronto.ca',
+            'ug234.eecg.utoronto.ca',
+            'ug235.eecg.utoronto.ca',
+            'ug236.eecg.utoronto.ca',
+            'ug237.eecg.utoronto.ca',
+            'ug238.eecg.utoronto.ca',
+            'ug239.eecg.utoronto.ca'
+            ]
         random.shuffle(args.machines)
 
     if args.admin:
@@ -310,7 +326,7 @@ def parse_arguments():
     parser.add_argument('--remote_launcher', type=str, default='~/ece1747/SimMud/run_client.py', help='Location of remoate_launcher in remote location, aka, run_client.py')
     parser.add_argument('--count', type=int, default=1000, help='Number of processes to deploy')
     parser.add_argument('--threshold', type=int, default=500, help='Number of processes to launch for each machine')
-    parser.add_argument('--delay', type=float, default=0.3, help='Delay interval between jobs launching on each machine')
+    parser.add_argument('--delay', type=float, default=0.5, help='Delay interval between jobs launching on each machine')
     # Forwarded to remote_launcher
     parser.add_argument('--port', type=str, default=':1747', help='Forward to remote_launcher Server @<IP>:<PORT>')
     parser.add_argument('--cmd', type=str, default='~/ece1747/SimMud/client', help='Forward to remote_launcher --cmd')
