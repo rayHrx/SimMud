@@ -4,10 +4,16 @@ import csv
 import datetime
 import multiprocessing
 import os
-import statistics
 import time
 
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except:
+    print('Please pip install matplotlib')
+try:
+    import numpy as np
+except:
+    print('Please pip install numpy')
 
 import trajectory
 import utility
@@ -170,16 +176,23 @@ def check_data_validity(dataset):
     '''
     (largest_update_interval, static/spread, quest/noquest, nclient, run_name, avgs5db)
     '''
+    # Main data structure to work with
     datasize_list = [(run_name, (static_spread, quest_noquest, nclient), max(map(lambda perthread: len(perthread[4]), avgs5db))) for _, static_spread, quest_noquest, nclient, run_name, avgs5db in dataset]
     datasize_list.sort(key=lambda p: p[2])
 
+    # Compute the high cutoff
     _, _, size_list = zip(*datasize_list)
+    high_cutoff = np.percentile(size_list, 85)
+    original_size = len(size_list)
 
-    size_mean = statistics.mean(size_list)
-    size_pstdev = statistics.pstdev(size_list)
-    print('Info:', 'Data sizes have', 'mean=' + float_fmt(size_mean), 'pstddev=' + float_fmt(size_pstdev))
+    # Calculate the mean and std on data < high_cutoff
+    _, _, size_list = zip(*filter(lambda t: t[2] < high_cutoff, datasize_list))
+    post_high_cutoff_size = len(size_list)
+    size_mean = np.mean(size_list)
+    size_std = np.std(size_list)
+    print('Info:', 'Data sizes have', 'mean=' + float_fmt(size_mean), 'std=' + float_fmt(size_std), 'high_cutoff=' + float_fmt(high_cutoff), '(' + str(original_size) + '->' + str(post_high_cutoff_size) + ')')
 
-    size_warning_threshold = size_mean - 1.5 * size_pstdev
+    size_warning_threshold = size_mean - 1.3 * size_std
     warning_list = [(run_name, label, size) for run_name, label, size in datasize_list if size < size_warning_threshold]
     
     for run_name, label, size in warning_list:

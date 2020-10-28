@@ -1,7 +1,10 @@
 import argparse
 import os
 
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except:
+    print('Please pip install matplotlib')
 
 import utility
 
