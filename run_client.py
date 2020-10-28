@@ -18,12 +18,15 @@ def sizeof_fmt(num, suffix='B'):
     '''
     for unit in ['','Ki']:
         if abs(num) < 1024.0:
-            return "%3.2f%s%s" % (num, unit, suffix)
+            return '%3.2f%s%s' % (num, unit, suffix)
         num /= 1024.0
-    return "%.2f%s%s" % (num, 'Mi', suffix)
+    return '%.2f%s%s' % (num, 'Mi', suffix)
 
 def num_fmt(num):
-    return f"{num:,}"
+    return f'{num:,}'
+
+def float_fmt(num):
+    return '{:.2f}'.format(num)
 
 
 class ControlPrompt(cmd.Cmd):
@@ -96,7 +99,7 @@ class ControlPrompt(cmd.Cmd):
 
 
     def do_load(self, arg):
-        print('Info:', psutil.cpu_count(logical=False), 'physical CPUs,', psutil.cpu_count(logical=True), 'logical CPUs,', '@', psutil.cpu_freq().current, 'MHz')
+        print('Info:', psutil.cpu_count(logical=False), 'physical CPUs,', psutil.cpu_count(logical=True), 'logical CPUs,', '@', float_fmt(psutil.cpu_freq().current), 'MHz')
         print('Info:', str(psutil.cpu_percent()) + '%', 'CPU:', end=' ')
         print(*psutil.cpu_percent(percpu=True), sep='% ', end='%\n')
 

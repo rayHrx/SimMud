@@ -5,6 +5,7 @@ import cmd
 import copy
 import itertools
 import random
+import time
 
 try:
     import paramiko
@@ -279,6 +280,7 @@ def main(args):
             count_to_use = min(args.threshold, count_left)
 
             sm.launch_task_on_machine(machine_idx_to_run, construct_launcher(remote_launcher=args.remote_launcher, cmd=args.cmd, count=count_to_use, port=args.port, stdout=args.stdout))
+            time.sleep(args.delay)
 
             count_left = count_left - count_to_use
 
@@ -291,7 +293,8 @@ def parse_arguments():
     parser.add_argument('--admin', action='store_true', help='SSH to all the machines, but without executing any commands')
     parser.add_argument('--remote_launcher', type=str, default='~/ece1747/SimMud/run_client.py', help='Location of remoate_launcher in remote location, aka, run_client.py')
     parser.add_argument('--count', type=int, default=1000, help='Number of processes to deploy')
-    parser.add_argument('--threshold', type=int, default=1000, help='Number of processes to launch for each machine')
+    parser.add_argument('--threshold', type=int, default=500, help='Number of processes to launch for each machine')
+    parser.add_argument('--delay', type=float, default=0.3, help='Delay interval between jobs launching on each machine')
     # Forwarded to remote_launcher
     parser.add_argument('--port', type=str, default=':1747', help='Forward to remote_launcher Server @<IP>:<PORT>')
     parser.add_argument('--cmd', type=str, default='~/ece1747/SimMud/client', help='Forward to remote_launcher --cmd')
