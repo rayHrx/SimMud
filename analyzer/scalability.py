@@ -4,12 +4,17 @@ import csv
 import datetime
 import multiprocessing
 import os
+import statistics
 import time
 
 import matplotlib.pyplot as plt
 
 import trajectory
 import utility
+
+
+def float_fmt(num):
+    return '{:.2f}'.format(num)
 
 
 def init(parser):
@@ -30,12 +35,17 @@ def main(args):
     dataset = multiprocessing.Pool().map(parse_run_metric_wrapper, map(lambda run_name: (run_name, args), run_names))
     end = time.time()
     print('Info:')
-    print('Info:', 'Parsing took', end - start, 'seconds')
+    print('Info:', 'Parsing took', float_fmt(end - start), 'seconds')
+
+    # (largest_update_interval, static/spread, quest/noquest, nclient, run_name, avgs5db)
+    dataset = [data for data in dataset if data]
+    # Check for data validity
+    check_data_validity(dataset)
 
     # Reorganize data
     # {quest_noquest: {static_spread: sorted [(nclient, largest_update_interval, run_name, avgs5db)]}}
     database = collections.defaultdict(lambda:collections.defaultdict(list))
-    for row in filter(None, dataset):
+    for row in dataset:
         largest_update_interval, static_spread, quest_noquest, nclient, run_name, avgs5db = row
         database[quest_noquest][static_spread].append((int(nclient), largest_update_interval, run_name, avgs5db))
     for datachart in database.values():
@@ -151,6 +161,20 @@ def parse_run_metric(run_name, args):
         return None
     largest_update_interval = max(largest_update_intervals)
 
-    info_str = 'Info: Parsing ' + run_name + ' (' + '{0}'.format(', '.join(['{:.2f}'.format(largest_update_interval)] + label_data)) + ')'
+    info_str = 'Info: Parsing ' + run_name + ' (' + '{0}'.format(', '.join([float_fmt(largest_update_interval)] + label_data)) + ')'
     print(info_str)
     return (largest_update_interval, *label_data, run_name, avgs5db)
+
+
+def check_data_validity(dataset):
+    '''
+    (largest_update_interval, static/spread, quest/noquest, nclient, run_name, avgs5db)
+    '''
+    datasize_list = [(run_name, max(map(lambda perthread: len(perthread[4]), avgs5db))) for _, _, _, _, run_name, avgs5db in dataset]
+    _, size_list = zip(*datasize_list)
+    size_mean = statistics.mean(size_list)
+    size_pstdev = statistics.pstdev(size_list)
+    print('Info:', 'Data sizes have', 'mean=' + float_fmt(size_mean), 'pstddev=' + float_fmt(size_pstdev))
+    for run_name, size in datasize_list:
+        if size < size_mean - size_pstdev:
+            print('Warning:', run_name, 'only contains', size, 'data')
