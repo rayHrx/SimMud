@@ -119,7 +119,15 @@ def plot_chart(ax, quest_noquest, single_chart_database):
     '''
     ax.set_title(quest_noquest)
     for static_spread, dataline in single_chart_database.items():
-        ax.plot(*(list(zip(*dataline))[0:2]), label=static_spread, marker='o', picker=True, pickradius=4)
+        x, y, run_name = list(zip(*dataline))[0:3]
+        
+        conflicts = [(x[idx], y[idx], run_name[idx]) for idx in range(len(x)) if x.count(x[idx]) > 1]
+        for xx, yy, rr in conflicts:
+            print('Warning:', rr, '(' + quest_noquest + ', ' + static_spread + ')','has conflicting data (' + str(xx) + ', ' + float_fmt(yy) + ')')
+        if len(conflicts) > 0:
+            print('Info:')
+                
+        ax.plot(x, y, label=static_spread, marker='o', picker=True, pickradius=4)
     ax.legend()
     ax.set(xlabel='Number of Clients', ylabel='Update Interval Time (ms)')
     ax.set_ylim(bottom=0.)
