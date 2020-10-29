@@ -32,10 +32,12 @@ class ServerProcessManager(run_client.ProcessManager):
         assert self.get_processes()[idx] is not None
         print('Info:', 'Stopping server')
         outs, errs = self.get_processes()[idx].communicate(input=bytes('q\n', 'ascii'))
-        for line in outs.decode('utf-8').splitlines():
-            print('Server STDOUT:', '    ', line)
-        for line in errs.decode('utf-8').splitlines():
-            print('Server STDERR:', '    ', line)
+        if outs:
+            for line in outs.decode('utf-8').splitlines():
+                print('Server STDOUT:', '    ', line)
+        if errs:
+            for line in errs.decode('utf-8').splitlines():
+                print('Server STDERR:', '    ', line)
         self.get_processes()[idx] = None
 
     def __del__(self):
