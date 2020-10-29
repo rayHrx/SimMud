@@ -129,6 +129,9 @@ class ProcessManager:
         self.__process_creater = process_creater
         self.__processes = list()
 
+    def get_processes(self):
+        return self.__processes
+
     def launch_process(self):
         idx = len(self.__processes)
         proc = self.__process_creater(idx)

@@ -20,18 +20,20 @@ class SuperControlPrompt(super_client.ControlPrompt):
 
 class ServerProcessManager(run_client.ProcessManager):
     def __init__(self, process_creater):
-        super(ServerProcessManager, self).__init__( process_creater)
+        super(ServerProcessManager, self).__init__(process_creater)
 
     def stop_process(self, idx):
-        assert idx < len(self.__processes)
-        assert self.__processes[idx] is not None
-        outs, errs = self.__processes[idx].communicate(input='q')
+        assert idx < len(self.get_processes())
+        assert self.get_processes()[idx] is not None
+        outs, errs = self.get_processes()[idx].communicate(input='q')
         print('Server:', outs)
         print('Server:', errs)
-        self.__processes[idx] = None
+        print(self.get_processes())
+        self.get_processes()[idx] = None
+        print(self.get_processes())
 
     def __del__(self):
-        for idx in filter(lambda idx: self.__processes[idx] is not None, range(len(self.__processes))):
+        for idx in filter(lambda idx: self.get_processes()[idx] is not None, range(len(self.get_processes()))):
             self.stop_process(idx)
 
 
