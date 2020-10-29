@@ -29,7 +29,7 @@ class SSHManager:
 
         machines_connected = [(machine, connect_client(machine, username, password)) for machine in machines]
         
-        self.__machine_names, self.__machines = (zip(*filter(lambda x: x[1] is not None, machines_connected)))
+        self.__machine_names, self.__machines = zip(*list(filter(lambda x: x[1] is not None, machines_connected)))
 
         self.__ioe = [None] * len(self.__machines)
 
