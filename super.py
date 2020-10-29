@@ -58,14 +58,14 @@ class LabelMessenger():
         self.__count = count
     
     def get_label(self):
-        return (self.__quest_noquest, self.__spread_static, self.__count)
+        return (self.__quest_noquest, self.__spread_static, str(self.__count))
 
     def print_git_message(self):
         print('Info:')
         print('Info:', 'Don\'t forget to git!')
         print('Info:', '    ', 'git status')
         print('Info:', '    ', 'git add .')
-        print('Info:', '    ', 'git commit -m \'' + str(self.get_label()) + '\'')
+        print('Info:', '    ', 'git commit -m \'' + ' '.join(self.get_label()) + '\'')
         print('Info:', '    ', 'git pull')
         print('Info:', '    ', 'git push')
         print('Info:')
