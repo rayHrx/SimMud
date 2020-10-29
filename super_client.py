@@ -20,10 +20,7 @@ class SSHManager:
             client = paramiko.SSHClient()
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             try:
-                if username is None or password is None:
-                    client.connect(machine)
-                else:
-                    client.connect(machine, username=username, password=password)
+                client.connect(machine, username=username, password=password)
                 print('Info:', 'Connected to', machine, 'successfully')
                 return client
             except:
@@ -31,10 +28,12 @@ class SSHManager:
                 return None
 
         machines_connected = [(machine, connect_client(machine, username, password)) for machine in machines]
+        machines_connected = list(filter(lambda x: x[1] is not None, machines_connected))
         
-        
-        print(list(zip(*list(filter(lambda x: x[1] is not None, machines_connected)))))
-        #self.__machine_names, self.__machines
+        self.__machine_names = None
+        self.__machines = None
+        if len(machines_connected) > 0:
+            self.__machine_names, self.__machines = zip(*machines_connected)
 
         self.__ioe = [None] * len(self.__machines)
 
