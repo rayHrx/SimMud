@@ -114,7 +114,7 @@ def get_server_config(path, quest, noquest, spread, static):
 
 
 def main(args):
-    print('Info:', args)
+    # print('Info:', args)
     print('Info:')
 
     cur_host_name = socket.gethostname()
