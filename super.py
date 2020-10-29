@@ -45,6 +45,7 @@ class ServerProcessManager(run_client.ProcessManager):
 
 def get_server_config(path, quest, noquest, spread, static):
     config_path = None
+    path = os.path.expanduser(path)
     if quest:
         if spread:
             config_path = os.path.join(path, 'config_spread_quest.ini')
@@ -130,7 +131,7 @@ def killer_process(wait_time):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='super.py')
-    parser.add_argument('--path', type=str, default='~/ece1747/SimMud', help='Remote directory')
+    parser.add_argument('--path', type=str, default='~/ece1747/SimMud', help='Directory')
 
     qmode_group = parser.add_mutually_exclusive_group(required=True)
     qmode_group.add_argument('--quest', action='store_true')
