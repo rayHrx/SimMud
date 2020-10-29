@@ -10,6 +10,9 @@ import signal
 import socket
 import subprocess
 import time
+import warnings
+
+warnings.filterwarnings(action='ignore',module='.*paramiko.*')
 
 import run_client
 import super_client
@@ -119,8 +122,8 @@ def main(args):
     if not args.disable_server_check:
         allowed_server_host = ['ug205', 'ug206', 'ug207', 'ug208', 'ug209']
         if cur_host_name not in allowed_server_host:
-            print('Error:', 'current server host', '@' + cur_host_name, 'is not allowed')
-            print('Error:', '    ', 'allowed server hosts:', allowed_server_host)
+            print('Error:', 'Current server host', '@' + cur_host_name, 'is not allowed')
+            print('Error:', '    ', 'List of allowed server hosts:', allowed_server_host)
             exit(0)
 
     local_path = os.path.expanduser(args.path)
