@@ -22,8 +22,10 @@ def sizeof_fmt(num, suffix='B'):
         num /= 1024.0
     return '%.2f%s%s' % (num, 'Mi', suffix)
 
+
 def num_fmt(num):
     return f'{num:,}'
+
 
 def float_fmt(num):
     return '{:.2f}'.format(num)
@@ -96,7 +98,6 @@ class ControlPrompt(cmd.Cmd):
             self.__process_manager.launch_process()
 
         return self.do_list()
-
 
     def do_load(self, arg):
         print('Info:', psutil.cpu_count(logical=False), 'physical CPUs,', psutil.cpu_count(logical=True), 'logical CPUs,', '@', float_fmt(psutil.cpu_freq().current), 'MHz')
@@ -235,4 +236,3 @@ def parse_arguments():
 
 if __name__ == '__main__':
     main(parse_arguments())
-

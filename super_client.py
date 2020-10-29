@@ -225,6 +225,7 @@ class ControlPrompt(cmd.Cmd):
             return False
         return True
 
+
 class SuperClientControlPrompt(ControlPrompt):
     def __init__(self, time, ssh_manager, args):
         super(SuperClientControlPrompt, self).__init__(time, ssh_manager)
@@ -253,6 +254,7 @@ class SuperClientControlPrompt(ControlPrompt):
         self.get_ssh_manager().launch_task_on_machine(idx, construct_launcher(remote_launcher=self.__args.remote_launcher, cmd=self.__args.cmd, count=count, port=self.__args.port, stdout=self.__args.stdout))
         print('')
 
+
 def construct_launcher(remote_launcher, cmd, count, port, stdout):
     def launcher(idx, machine, machine_name):
         command = [remote_launcher, '--cmd', cmd, '--count', count, '--port', port]
@@ -266,6 +268,7 @@ def construct_launcher(remote_launcher, cmd, count, port, stdout):
         return machine.exec_command(command, get_pty=True)
     return launcher
 
+
 def print_time(launch_time, termination_time=None, show_elapsed=False):
     print('Info:', 'Launch      :', launch_time.strftime('%Y-%m-%d %H:%M:%S'))
     if show_elapsed or termination_time is not None:
@@ -276,6 +279,7 @@ def print_time(launch_time, termination_time=None, show_elapsed=False):
     if termination_time is not None:
         print('Info:', 'Termination :', termination_time.strftime('%Y-%m-%d %H:%M:%S'))
         print('Info:', 'left        :', '{:.2f}'.format((termination_time - now).total_seconds()), 'seconds')
+
 
 def get_remote_machines(machines):
     if machines is None:
@@ -315,6 +319,7 @@ def get_remote_machines(machines):
         random.shuffle(machines)
     return machines
 
+
 def launch_tasks(sshmanager, total_count, remote_launcher, remote_cmd, port, delay, stdout=False, is_unevenly=False, threshold=1000):
     print('Info:')
     machine_iter = itertools.cycle(range(sshmanager.get_num_machines()))
@@ -336,6 +341,7 @@ def launch_tasks(sshmanager, total_count, remote_launcher, remote_cmd, port, del
 
         count_left = count_left - count_to_use
 
+
 def main(args):
     print('Info:', args)
     print('Info:')
@@ -344,8 +350,7 @@ def main(args):
 
     if args.admin:
         print('Info:', 'Running in admin mode')
-    
-    if not args.admin:
+    else:
         print('Info:', 'Runing a total of', args.count, 'processes')
         required_machines_count = (int((args.count - 1) / args.threshold) + 1)
         if required_machines_count > len(args.machines):
@@ -355,29 +360,30 @@ def main(args):
             exit(0)
 
     sm = SSHManager(args.machines, args.username, args.password)
-    launch_time = datetime.datetime.now()
     print('Info:')
+    launch_time = datetime.datetime.now()
     print_time(launch_time)
 
     if not args.admin:
         launch_tasks(sshmanager=sm, total_count=args.count, remote_launcher=args.remote_launcher, remote_cmd=args.cmd, port=args.port, delay=args.delay, stdout=args.stdout, is_unevenly=args.unevenly, threshold=args.threshold)
+    
     print('Info:')
-
     termination_time = None
     if args.duration is not None:
         print('Info:', 'Will terminate in', '{:.2f}'.format(args.duration), 'seconds')
         termination_time = datetime.datetime.now() + datetime.timedelta(seconds=args.duration)
         print_time(launch_time, termination_time)
-        multiprocessing.Process(target=killer, args=(args.duration,), daemon=True).start()
+        multiprocessing.Process(target=killer_process, args=(args.duration,), daemon=True).start()
     
     SuperClientControlPrompt((launch_time, termination_time), sm, args).cmdloop()
 
 
-def killer(wait_time):
+def killer_process(wait_time):
     time.sleep(wait_time)
     print('')
     print('Info:', 'Terminate!')
     os.kill(os.getppid(), signal.SIGTERM)
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='super_client.py')
