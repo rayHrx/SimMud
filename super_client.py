@@ -197,7 +197,7 @@ class ControlPrompt(cmd.Cmd):
 
         if forward_arg is not None:
             # Print stdout before forwarding to stdin
-            o.channel.settimeout(1)
+            o.channel.settimeout(1.2)
             try:
                 for line in o:
                     print('        >', line.strip('\n'))
@@ -210,7 +210,7 @@ class ControlPrompt(cmd.Cmd):
             i.flush()
 
         # Print stdout after forwarding to stdin
-        o.channel.settimeout(3)
+        o.channel.settimeout(1.8)
         try:
             for line in o:
                 print('        >', line.strip('\n'))
