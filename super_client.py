@@ -19,12 +19,18 @@ class SSHManager:
         def connect_client(machine, username, password):
             client = paramiko.SSHClient()
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            client.connect(machine, username=username, password=password)
-            print('Info:', 'Connected to', machine, 'successfully')
-            return client
+            try:
+                client.connect(machine, username=username, password=password)
+                print('Info:', 'Connected to', machine, 'successfully')
+                return client
+            except:
+                print('Error:', 'Could not connect to', machine)
+                return None
 
-        self.__machine_names = copy.deepcopy(machines)
-        self.__machines = [connect_client(machine, username, password) for machine in machines]
+        machines_connected = [(machine, connect_client(machine, username, password)) for machine in machines]
+        
+        self.__machine_names, self.__machines = (zip(*filter(lambda x: x[1] is not None, machines_connected)))
+
         self.__ioe = [None] * len(self.__machines)
 
     def get_num_machines(self):
