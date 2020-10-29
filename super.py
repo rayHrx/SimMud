@@ -32,9 +32,7 @@ class ServerProcessManager(run_client.ProcessManager):
         outs, errs = self.get_processes()[idx].communicate(input=bytes('q\n', 'ascii'))
         print('Server:', outs)
         print('Server:', errs)
-        print(self.get_processes())
         self.get_processes()[idx] = None
-        print(self.get_processes())
 
     def __del__(self):
         for idx in filter(lambda idx: self.get_processes()[idx] is not None, range(len(self.get_processes()))):
@@ -88,7 +86,7 @@ def main(args):
         print('Info:', 'Launching server process', '@' + server_host_port)
         cmd = [os.path.join(args.current_dir, 'server'), config_path, str(args.port)]
         print('Info:', '    ', ' '.join(cmd))
-        return subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return subprocess.Popen(cmd, stdin=subprocess.PIPE)#, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     spm = ServerProcessManager(server_launcher)
     spm.launch_process()
     time.sleep(5 * args.delay)
