@@ -26,6 +26,7 @@ class SuperControlPrompt(super_client.ControlPrompt):
 
     def do_label(self, arg=None):
         print('Info:', self.__label_message.get_label())
+        print('Info:')
 
 
 class ServerProcessManager(run_client.ProcessManager):
