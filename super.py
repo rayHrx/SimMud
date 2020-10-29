@@ -76,7 +76,7 @@ def main(args):
 
     def server_launcher(_):
         print('Info:', 'Launching server process')
-        cmd = [os.path.join(args.current_dir, 'server'), config_path, args.port]
+        cmd = [os.path.join(args.current_dir, 'server'), config_path, str(args.port)]
         print('Info:', '    ', ' '.join(cmd))
         return subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     spm = ServerProcessManager(server_launcher)
