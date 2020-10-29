@@ -15,12 +15,17 @@ import run_client
 import super_client
 
 
+# Process tombstone endpoint 1
 class SuperControlPrompt(super_client.ControlPrompt):
-    def __init__(self, time, ssh_manager):
+    def __init__(self, time, ssh_manager, label_message):
         super(SuperControlPrompt, self).__init__(time, ssh_manager)
+        self.__label_message = label_message
 
     def do_load(self, arg=None):
         run_client.print_load()
+
+    def do_label(self, arg=None):
+        print('Info:', self.__label_message.get_label())
 
 
 class ServerProcessManager(run_client.ProcessManager):
@@ -45,10 +50,32 @@ class ServerProcessManager(run_client.ProcessManager):
             self.stop_process(idx)
 
 
+class LabelMessenger():
+    def __init__(self, quest_noquest, spread_static, count):
+        self.__quest_noquest = quest_noquest
+        self.__spread_static = spread_static
+        self.__count = count
+    
+    def get_label(self):
+        return (self.__quest_noquest, self.__spread_static, self.__count)
+
+    def print_git_message(self):
+        print('Info:', '    ', 'git status')
+        print('Info:', '    ', 'git add .')
+        print('Info:', '    ', 'git commit -m \'' + str(self.get_label) + '\'')
+        print('Info:', '    ', 'git pull')
+        print('Info:', '    ', 'git push')
+
+    def __del__(self):
+        self.print_git_message()
+
+
+# Process tombstone endpoint 2
 class SignalHandler():
-    def __init__(self, ssh_manager, server_process_manager):
+    def __init__(self, ssh_manager, server_process_manager, label_message):
         self.__ssh_manager = ssh_manager
         self.__server_process_manager = server_process_manager
+        self.__label_message = label_message
         signal.signal(signal.SIGTERM, self.exit_gracefully)
 
     def exit_gracefully(self, signum, frame):
@@ -111,8 +138,11 @@ def main(args):
         return subprocess.Popen(cmd, stdin=subprocess.PIPE)#, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     spm = ServerProcessManager(server_launcher)
 
+    # Auto messenger on exit
+    label_msger = LabelMessenger('quest' if args.quest else 'noquest', 'spread' if args.spread else 'static', args.count)
+
     # Register the signal handler
-    sh = SignalHandler(sm, spm)
+    sh = SignalHandler(sm, spm, label_msger)
 
     spm.launch_process()
     time.sleep(5 * args.delay)
@@ -138,7 +168,7 @@ def main(args):
         multiprocessing.Process(target=killer_process, args=(args.duration,), daemon=True).start()
     
     print('Info:')
-    SuperControlPrompt((launch_time, termination_time), sm).cmdloop('DO NOT CTRL-C!')
+    SuperControlPrompt((launch_time, termination_time), sm, label_msger).cmdloop('DO NOT CTRL-C!')
     sh.exit_gracefully(None, None)
 
 
