@@ -117,7 +117,7 @@ class ControlPrompt(cmd.Cmd):
 
         return self.do_list()
 
-    def do_load(self, arg):
+    def do_load(self, arg=None):
         print_load()
 
 

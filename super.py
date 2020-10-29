@@ -18,6 +18,9 @@ class SuperControlPrompt(super_client.ControlPrompt):
     def __init__(self, time, ssh_manager):
         super(SuperControlPrompt, self).__init__(time, ssh_manager)
 
+    def do_load(self, arg=None):
+        run_client.print_load()
+
 
 class ServerProcessManager(run_client.ProcessManager):
     def __init__(self, process_creater):
@@ -26,7 +29,7 @@ class ServerProcessManager(run_client.ProcessManager):
     def stop_process(self, idx):
         assert idx < len(self.get_processes())
         assert self.get_processes()[idx] is not None
-        outs, errs = self.get_processes()[idx].communicate(input='q')
+        outs, errs = self.get_processes()[idx].communicate(input=bytes('q\n', 'ascii'))
         print('Server:', outs)
         print('Server:', errs)
         print(self.get_processes())
