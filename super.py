@@ -116,6 +116,12 @@ def main(args):
 
     cur_host_name = socket.gethostname()
     print('Info:', '@' + cur_host_name)
+    if not args.disable_server_check:
+        allowed_server_host = ['ug205', 'ug206', 'ug207', 'ug208', 'ug209']
+        if cur_host_name not in allowed_server_host:
+            print('Error:', 'current server host', '@' + cur_host_name, 'is not allowed')
+            print('Error:', '    ', 'allowed server hosts:', allowed_server_host)
+            exit(0)
 
     local_path = os.path.expanduser(args.path)
     config_path = get_server_config(path=local_path, quest=args.quest, noquest=args.noquest, spread=args.spread, static=args.static)
@@ -185,25 +191,23 @@ def killer_process(wait_time):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='super.py')
+    # Optional
     parser.add_argument('--path', type=str, default='~/ece1747/SimMud', help='Directory')
-
+    parser.add_argument('--delay', type=float, default=1.0, help='Delay interval between jobs launching on each machine')
+    parser.add_argument('--duration', type=float, default=None, help='Time in seconds to auto terminate this script')
+    parser.add_argument('--port', type=int, default=None, help='Port to use. Random by default')
+    parser.add_argument('--client_machines', type=str, nargs='+', help='Pool of machines for client')
+    parser.add_argument('--disable_server_check', action='store_true', help='Disable the server machine check')
+    # Required
+    parser.add_argument('--username', type=str, required=True, help='Username for SSH')
+    parser.add_argument('--password', type=str, required=True, help='Password for SSH')
     qmode_group = parser.add_mutually_exclusive_group(required=True)
     qmode_group.add_argument('--quest', action='store_true')
     qmode_group.add_argument('--noquest', action='store_true')
-
     lmode_group = parser.add_mutually_exclusive_group(required=True)
     lmode_group.add_argument('--static', action='store_true')
     lmode_group.add_argument('--spread', action='store_true')
-
     parser.add_argument('--count', type=int, required=True, help='Number of clients to deploy')
-    parser.add_argument('--delay', type=float, default=1.0, help='Delay interval between jobs launching on each machine')
-    parser.add_argument('--duration', type=float, default=None, help='Time in seconds to auto terminate this script')
-    
-    parser.add_argument('--port', type=int, default=None, help='Port to use. Random by default')
-
-    parser.add_argument('--client_machines', type=str, nargs='+', help='Pool of machines for client')
-    parser.add_argument('--username', type=str, required=True, help='Username for SSH')
-    parser.add_argument('--password', type=str, required=True, help='Password for SSH')
     
     return parser.parse_args()
 
