@@ -6,6 +6,7 @@ import datetime
 import multiprocessing
 import os
 import signal
+import socket
 import subprocess
 import time
 
@@ -63,6 +64,9 @@ def main(args):
     print('Info:', args)
     print('Info:')
 
+    cur_host_name = socket.gethostname()
+    print('Info:', '@' + cur_host_name)
+
     config_path = get_server_config(current_dir=args.current_dir, quest=args.quest, noquest=args.noquest, spread=args.spread, static=args.static)
     if config_path is None:
         print('Error:', 'Could not find server config file!')
@@ -76,8 +80,9 @@ def main(args):
         exit(0)
     print('Info:')
 
+    server_host_port = cur_host_name + ':' + str(args.port)
     def server_launcher(_):
-        print('Info:', 'Launching server process')
+        print('Info:', 'Launching server process', '@' + server_host_port)
         cmd = [os.path.join(args.current_dir, 'server'), config_path, str(args.port)]
         print('Info:', '    ', ' '.join(cmd))
         return subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -94,7 +99,7 @@ def main(args):
         total_count=args.count, 
         remote_launcher=os.path.join(args.remote_dir, 'run_client.py'), 
         remote_cmd=os.path.join(args.remote_dir, 'client'), 
-        port=args.port, 
+        port=server_host_port, 
         delay=args.delay)
     
     print('Info:')
