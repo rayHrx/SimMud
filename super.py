@@ -45,7 +45,6 @@ class ServerProcessManager(run_client.ProcessManager):
 
 def get_server_config(path, quest, noquest, spread, static):
     config_path = None
-    path = os.path.expanduser(path)
     if quest:
         if spread:
             config_path = os.path.join(path, 'config_spread_quest.ini')
@@ -73,9 +72,10 @@ def main(args):
     cur_host_name = socket.gethostname()
     print('Info:', '@' + cur_host_name)
 
-    config_path = get_server_config(path=args.path, quest=args.quest, noquest=args.noquest, spread=args.spread, static=args.static)
+    local_path = os.path.expanduser(args.path)
+    config_path = get_server_config(path=local_path, quest=args.quest, noquest=args.noquest, spread=args.spread, static=args.static)
     if config_path is None:
-        print('Error:', 'Could not find server config file in', args.path)
+        print('Error:', 'Could not find server config file in', local_path)
         exit(0)
 
     args.client_machines = super_client.get_remote_machines(args.client_machines)
@@ -92,7 +92,7 @@ def main(args):
     server_host_port = cur_host_name + ':' + str(args.port)
     def server_launcher(_):
         print('Info:', 'Launching server process', '@' + server_host_port)
-        cmd = [os.path.join(args.path, 'server'), config_path, str(args.port)]
+        cmd = [os.path.join(local_path, 'server'), config_path, str(args.port)]
         print('Info:', '    ', ' '.join(cmd))
         return subprocess.Popen(cmd, stdin=subprocess.PIPE)#, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     spm = ServerProcessManager(server_launcher)
