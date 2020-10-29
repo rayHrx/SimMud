@@ -267,12 +267,9 @@ def print_time(launch_time, termination_time=None, show_elapsed=False):
         print('Info:', 'Termination :', termination_time.strftime('%Y-%m-%d %H:%M:%S'))
         print('Info:', 'left        :', '{:.2f}'.format((termination_time - now).total_seconds()), 'seconds')
 
-def main(args):
-    print('Info:', args)
-    print('Info:')
-
-    if args.machines is None:
-        args.machines = [
+def get_remote_machines(machines):
+    if machines is None:
+        machines = [
             #'ug210.eecg.utoronto.ca', 
             'ug211.eecg.utoronto.ca',
             'ug212.eecg.utoronto.ca',
@@ -305,7 +302,35 @@ def main(args):
             'ug239.eecg.utoronto.ca',
             'ug240.eecg.utoronto.ca'
             ]
-        random.shuffle(args.machines)
+        random.shuffle(machines)
+    return machines
+
+def launch_tasks(sshmanager, count, remote_launcher, remote_cmd, port, delay, stdout=False, is_unevenly=False, threshold=1000):
+    print('Info:')
+    machine_iter = itertools.cycle(range(sshmanager.get_num_machines()))
+    count_left = count
+    
+    if is_unevenly:
+        target_count_to_use = threshold
+        print('Info:', 'Schedule to run', target_count_to_use, 'jobs to each of the', math.ceil(count_left / target_count_to_use), 'machines')
+    else:
+        target_count_to_use = math.ceil(count_left / sshmanager.get_num_machines())
+        print('Info:', 'Schedule to run', target_count_to_use, 'jobs on every machine')
+
+    while count_left > 0:
+        machine_idx_to_run = next(machine_iter)
+        count_to_use = min(target_count_to_use, count_left)
+
+        sshmanager.launch_task_on_machine(machine_idx_to_run, construct_launcher(remote_launcher=remote_launcher, cmd=remote_cmd, count=count_to_use, port=port, stdout=stdout))
+        time.sleep(delay)
+
+        count_left = count_left - count_to_use
+
+def main(args):
+    print('Info:', args)
+    print('Info:')
+
+    args.machines = get_remote_machines(args.machines)
 
     if args.admin:
         print('Info:', 'Running in admin mode')
@@ -325,26 +350,7 @@ def main(args):
     print_time(launch_time)
 
     if not args.admin:
-        print('Info:')
-        machine_iter = itertools.cycle(range(sm.get_num_machines()))
-        count_left = args.count
-        
-        if args.unevenly:
-            target_count_to_use = args.threshold
-            print('Info:', 'Schedule to run', target_count_to_use, 'jobs to each of the', math.ceil(args.count / target_count_to_use), 'machines')
-        else:
-            target_count_to_use = math.ceil(count_left / sm.get_num_machines())
-            print('Info:', 'Schedule to run', target_count_to_use, 'jobs on every machine')
-
-        while count_left > 0:
-            machine_idx_to_run = next(machine_iter)
-            count_to_use = min(target_count_to_use, count_left)
-
-            sm.launch_task_on_machine(machine_idx_to_run, construct_launcher(remote_launcher=args.remote_launcher, cmd=args.cmd, count=count_to_use, port=args.port, stdout=args.stdout))
-            time.sleep(args.delay)
-
-            count_left = count_left - count_to_use
-
+        launch_tasks(sshmanager=sm, count=args.count, remote_launcher=args.remote_launcher, remote_cmd=args.cmd, port=args.port, delay=args.delay, stdout=args.stdout, is_unevenly=args.unevenly, threshold=args.threshold)
     print('Info:')
 
     termination_time = None
