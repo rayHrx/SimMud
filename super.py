@@ -121,7 +121,7 @@ def main(args):
         super_client.print_time(launch_time, termination_time)
         multiprocessing.Process(target=killer_process, args=(args.duration,), daemon=True).start()
     
-    SuperControlPrompt((launch_time, termination_time), sm).cmdloop()
+    SuperControlPrompt((launch_time, termination_time), sm).cmdloop('DO NOT CTRL-C!')
 
 
 def killer_process(wait_time):
