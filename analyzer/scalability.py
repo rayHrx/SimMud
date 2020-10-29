@@ -27,6 +27,7 @@ def init(parser):
     parser.description='Plot # client vs update interval with and without quest for spread and static'
     parser.add_argument('--path', type=str, default='./metrics', help='Path to the metrics directory')
     parser.add_argument('--iter_num', type=int, default=100, help='Moving average window size')
+    parser.add_argument('--max_row', type=int, default=14000, help='Number of iterations of raw data to process')
     parser.add_argument('--debug', action='store_true', help='Print debug messages when on')
     parser.add_argument('--gui', action='store_true', help='Open charts on GUI')
     parser.add_argument('--output', type=str, help='Location to dump chart')
@@ -162,7 +163,7 @@ def parse_run_metric(run_name, args):
     largest_update_intervals = list()
     avgs5db = list()
     for csv_filename in csv_filenames:
-        avg = utility.calculate_avg(os.path.join(run_metric_dir, csv_filename), args.iter_num, args.debug)
+        avg = utility.calculate_avg(filename=os.path.join(run_metric_dir, csv_filename), iter_num=args.iter_num, debug=args.debug, max_row=args.max_row)
         avgs5db.append(avg)
         update_interval = avg[4]
         large_ui = max(update_interval)
