@@ -18,7 +18,7 @@ class SSHManager:
     def __init__(self, machines, username, password):
         def connect_client(machine, username, password):
             client = paramiko.SSHClient()
-            #client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             try:
                 if username is None or password is None:
                     client.connect(machine)
@@ -32,7 +32,9 @@ class SSHManager:
 
         machines_connected = [(machine, connect_client(machine, username, password)) for machine in machines]
         
-        self.__machine_names, self.__machines = map(list, zip(*list(filter(lambda x: x[1] is not None, machines_connected))))
+        
+        print(list(zip(*list(filter(lambda x: x[1] is not None, machines_connected)))))
+        #self.__machine_names, self.__machines
 
         self.__ioe = [None] * len(self.__machines)
 
