@@ -127,7 +127,7 @@ def plot_chart(ax, quest_noquest, single_chart_database):
         if len(conflicts) > 0:
             print('Info:')
                 
-        ax.plot(x, y, label=static_spread, marker='o', picker=True, pickradius=4)
+        ax.plot(x, y, label=static_spread, marker='o', picker=True, pickradius=2)
     ax.legend()
     ax.set(xlabel='Number of Clients', ylabel='Update Interval Time (ms)')
     ax.set_ylim(bottom=0.)
