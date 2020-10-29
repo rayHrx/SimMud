@@ -322,7 +322,7 @@ def main(args):
         
         if args.evenly:
             target_count_to_use = math.ceil(count_left / sm.get_num_machines())
-            print('Info:', 'Schedule to run ', target_count_to_use, 'jobs on every machine')
+            print('Info:', 'Schedule to run', target_count_to_use, 'jobs on every machine')
         else:
             target_count_to_use = args.threshold
             print('Info:', 'Schedule to run', target_count_to_use, 'jobs to each of the', math.ceil(args.count / target_count_to_use), 'machines')
