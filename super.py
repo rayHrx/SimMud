@@ -5,6 +5,7 @@ import cmd
 import datetime
 import multiprocessing
 import os
+import random
 import signal
 import socket
 import subprocess
@@ -29,9 +30,12 @@ class ServerProcessManager(run_client.ProcessManager):
     def stop_process(self, idx):
         assert idx < len(self.get_processes())
         assert self.get_processes()[idx] is not None
+        print('Info:', 'Stopping server')
         outs, errs = self.get_processes()[idx].communicate(input=bytes('q\n', 'ascii'))
-        print('Server:', outs)
-        print('Server:', errs)
+        for line in outs.decode('utf-8').splitlines():
+            print('Server STDOUT:', '    ', line)
+        for line in errs.decode('utf-8').splitlines():
+            print('Server STDERR:', '    ', line)
         self.get_processes()[idx] = None
 
     def __del__(self):
@@ -39,21 +43,21 @@ class ServerProcessManager(run_client.ProcessManager):
             self.stop_process(idx)
 
 
-def get_server_config(current_dir, quest, noquest, spread, static):
+def get_server_config(path, quest, noquest, spread, static):
     config_path = None
     if quest:
         if spread:
-            config_path = os.path.join(current_dir, 'config_spread_quest.ini')
+            config_path = os.path.join(path, 'config_spread_quest.ini')
         else:
             assert static
-            config_path = os.path.join(current_dir, 'config_static_quest.ini')
+            config_path = os.path.join(path, 'config_static_quest.ini')
     else:
         assert noquest
         if spread:
-            config_path = os.path.join(current_dir, 'config_spread_no_quest.ini')
+            config_path = os.path.join(path, 'config_spread_no_quest.ini')
         else:
             assert static
-            config_path = os.path.join(current_dir, 'config_static_no_quest.ini')
+            config_path = os.path.join(path, 'config_static_no_quest.ini')
     
     if os.path.isfile(config_path):
         return config_path
@@ -68,7 +72,7 @@ def main(args):
     cur_host_name = socket.gethostname()
     print('Info:', '@' + cur_host_name)
 
-    config_path = get_server_config(current_dir=args.current_dir, quest=args.quest, noquest=args.noquest, spread=args.spread, static=args.static)
+    config_path = get_server_config(path=args.path, quest=args.quest, noquest=args.noquest, spread=args.spread, static=args.static)
     if config_path is None:
         print('Error:', 'Could not find server config file!')
         exit(0)
@@ -81,10 +85,13 @@ def main(args):
         exit(0)
     print('Info:')
 
+    if args.port is None:
+        args.port = random.randint(1500, 60000)
+
     server_host_port = cur_host_name + ':' + str(args.port)
     def server_launcher(_):
         print('Info:', 'Launching server process', '@' + server_host_port)
-        cmd = [os.path.join(args.current_dir, 'server'), config_path, str(args.port)]
+        cmd = [os.path.join(args.path, 'server'), config_path, str(args.port)]
         print('Info:', '    ', ' '.join(cmd))
         return subprocess.Popen(cmd, stdin=subprocess.PIPE)#, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     spm = ServerProcessManager(server_launcher)
@@ -98,8 +105,8 @@ def main(args):
     super_client.launch_tasks(
         sshmanager=sm, 
         total_count=args.count, 
-        remote_launcher=os.path.join(args.remote_dir, 'run_client.py'), 
-        remote_cmd=os.path.join(args.remote_dir, 'client'), 
+        remote_launcher=os.path.join(args.path, 'run_client.py'), 
+        remote_cmd=os.path.join(args.path, 'client'), 
         port=server_host_port, 
         delay=args.delay)
     
@@ -123,8 +130,7 @@ def killer_process(wait_time):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='super.py')
-    parser.add_argument('--remote_dir', type=str, default='~/ece1747/SimMud', help='Remote directory')
-    parser.add_argument('--current_dir', type=str, default='./', help='Current directory')
+    parser.add_argument('--path', type=str, default='~/ece1747/SimMud', help='Remote directory')
 
     qmode_group = parser.add_mutually_exclusive_group(required=True)
     qmode_group.add_argument('--quest', action='store_true')
@@ -138,7 +144,7 @@ def parse_arguments():
     parser.add_argument('--delay', type=float, default=1.0, help='Delay interval between jobs launching on each machine')
     parser.add_argument('--duration', type=float, default=None, help='Time in seconds to auto terminate this script')
     
-    parser.add_argument('--port', type=int, default=1747, help='Port to use')
+    parser.add_argument('--port', type=int, default=None, help='Port to use. Random by default')
 
     parser.add_argument('--client_machines', type=str, nargs='+', help='Pool of machines for client')
     parser.add_argument('--username', type=str, required=True, help='Username for SSH')
