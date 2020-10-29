@@ -117,12 +117,12 @@ def parse_arguments():
     parser.add_argument('--current_dir', type=str, default='./', help='Current directory')
 
     qmode_group = parser.add_mutually_exclusive_group(required=True)
-    qmode_group.add_argument('--quest', type=bool, defalt=False, action='store_true')
-    qmode_group.add_argument('--noquest', type=bool, defalt=False, action='store_true')
+    qmode_group.add_argument('--quest', action='store_true')
+    qmode_group.add_argument('--noquest', action='store_true')
 
     lmode_group = parser.add_mutually_exclusive_group(required=True)
-    lmode_group.add_argument('--static', type=bool, defalt=False, action='store_true')
-    lmode_group.add_argument('--spread', type=bool, defalt=False, action='store_true')
+    lmode_group.add_argument('--static', action='store_true')
+    lmode_group.add_argument('--spread', action='store_true')
 
     parser.add_argument('--count', type=int, required=True, help='Number of clients to deploy')
     parser.add_argument('--delay', type=float, default=1.0, help='Delay interval between jobs launching on each machine')
