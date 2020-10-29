@@ -179,7 +179,7 @@ def main(args):
 def killer_process(wait_time):
     time.sleep(wait_time)
     print('')
-    print('Info:', 'Terminate!')
+    print('Info:', 'Terminate due to --duration!')
     os.kill(os.getppid(), signal.SIGTERM)
 
 
