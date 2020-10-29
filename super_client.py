@@ -32,10 +32,11 @@ class SSHManager:
         
         self.__machine_names = None
         self.__machines = None
+        self.__ioe = None
+    
         if len(machines_connected) > 0:
             self.__machine_names, self.__machines = zip(*machines_connected)
-
-        self.__ioe = [None] * len(self.__machines)
+            self.__ioe = [None] * len(self.__machines)
 
     def get_num_machines(self):
         return len(self.__machines)
