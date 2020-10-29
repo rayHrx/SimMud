@@ -74,7 +74,7 @@ def main(args):
 
     config_path = get_server_config(path=args.path, quest=args.quest, noquest=args.noquest, spread=args.spread, static=args.static)
     if config_path is None:
-        print('Error:', 'Could not find server config file!')
+        print('Error:', 'Could not find server config file in', args.path)
         exit(0)
 
     args.client_machines = super_client.get_remote_machines(args.client_machines)
