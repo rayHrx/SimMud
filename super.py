@@ -65,7 +65,7 @@ class LabelMessenger():
         print('Info:', 'Don\'t forget to git!')
         print('Info:', '    ', 'git status')
         print('Info:', '    ', 'git add .')
-        print('Info:', '    ', 'git commit -m \'' + str(self.get_label) + '\'')
+        print('Info:', '    ', 'git commit -m \'' + str(self.get_label()) + '\'')
         print('Info:', '    ', 'git pull')
         print('Info:', '    ', 'git push')
         print('Info:')
