@@ -54,6 +54,7 @@ class SignalHandler():
     def exit_gracefully(self, signum, frame):
         self.__ssh_manager.__del__()
         self.__server_process_manager.__del__()
+        exit(0)
 
 
 def get_server_config(path, quest, noquest, spread, static):
