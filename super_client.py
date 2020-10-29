@@ -5,6 +5,7 @@ import cmd
 import copy
 import datetime
 import itertools
+import math
 import random
 import time
 
@@ -318,9 +319,17 @@ def main(args):
         print('Info:')
         machine_iter = itertools.cycle(range(sm.get_num_machines()))
         count_left = args.count
+        
+        if args.evenly:
+            target_count_to_use = math.ceil(count_left / sm.get_num_machines())
+            print('Info:', 'Schedule to run ', target_count_to_use, 'jobs on every machine')
+        else:
+            target_count_to_use = args.threshold
+            print('Info:', 'Schedule to run', target_count_to_use, 'jobs to each of the', math.ceil(args.count / target_count_to_use), 'machines')
+
         while count_left > 0:
             machine_idx_to_run = next(machine_iter)
-            count_to_use = min(args.threshold, count_left)
+            count_to_use = min(target_count_to_use, count_left)
 
             sm.launch_task_on_machine(machine_idx_to_run, construct_launcher(remote_launcher=args.remote_launcher, cmd=args.cmd, count=count_to_use, port=args.port, stdout=args.stdout))
             time.sleep(args.delay)
@@ -336,7 +345,8 @@ def parse_arguments():
     parser.add_argument('--admin', action='store_true', help='SSH to all the machines, but without executing any commands')
     parser.add_argument('--remote_launcher', type=str, default='~/ece1747/SimMud/run_client.py', help='Location of remoate_launcher in remote location, aka, run_client.py')
     parser.add_argument('--count', type=int, default=1000, help='Number of processes to deploy')
-    parser.add_argument('--threshold', type=int, default=500, help='Number of processes to launch for each machine')
+    parser.add_argument('--evenly', action='store_true', help='Evenly distribute jobs onto machines, still limited by --threshold')
+    parser.add_argument('--threshold', type=int, default=500, help='Limited number of processes to launch for each machine')
     parser.add_argument('--delay', type=float, default=0.5, help='Delay interval between jobs launching on each machine')
     # Forwarded to remote_launcher
     parser.add_argument('--port', type=str, default=':1747', help='Forward to remote_launcher Server @<IP>:<PORT>')
