@@ -45,6 +45,17 @@ class ServerProcessManager(run_client.ProcessManager):
             self.stop_process(idx)
 
 
+class SignalHandler():
+    def __init__(self, ssh_manager, server_process_manager):
+        self.__ssh_manager = ssh_manager
+        self.__server_process_manager = server_process_manager
+        signal.signal(signal.SIGTERM, self.exit_gracefully)
+
+    def exit_gracefully(self, signum, frame):
+        self.__ssh_manager.__del__()
+        self.__server_process_manager.__del__()
+
+
 def get_server_config(path, quest, noquest, spread, static):
     config_path = None
     if quest:
@@ -98,6 +109,10 @@ def main(args):
         print('Info:', '    ', ' '.join(cmd))
         return subprocess.Popen(cmd, stdin=subprocess.PIPE)#, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     spm = ServerProcessManager(server_launcher)
+
+    # Register the signal handler
+    sh = SignalHandler(sm, spm)
+
     spm.launch_process()
     time.sleep(5 * args.delay)
 
@@ -122,6 +137,7 @@ def main(args):
         multiprocessing.Process(target=killer_process, args=(args.duration,), daemon=True).start()
     
     SuperControlPrompt((launch_time, termination_time), sm).cmdloop('DO NOT CTRL-C!')
+    sh.exit_gracefully(None, None)
 
 
 def killer_process(wait_time):
