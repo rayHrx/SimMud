@@ -6,7 +6,10 @@ import copy
 import datetime
 import itertools
 import math
+import multiprocessing
+import os
 import random
+import signal
 import time
 
 try:
@@ -94,13 +97,14 @@ class SSHManager:
             
 
 class ControlPrompt(cmd.Cmd):
-    def __init__(self, launch_time, ssh_manager, args):
+    def __init__(self, time, ssh_manager, args):
         '''
         ssh_manager is SSHManager
+        time = (launch_time, termination_time=None)
         '''
         assert isinstance(ssh_manager, SSHManager)
         super(ControlPrompt, self).__init__()
-        self.__launch_time = launch_time
+        self.__time = time
         self.__ssh_manager = ssh_manager
         self.__args = args
 
@@ -222,7 +226,7 @@ class ControlPrompt(cmd.Cmd):
         o.channel.settimeout(None)
     
     def do_time(self, arg=None):
-        print_launch_time(self.__launch_time, True)
+        print_time(*self.__time, True)
         print('Info:')
 
     def do_exit(self, arg=None):
@@ -252,12 +256,16 @@ def construct_launcher(remote_launcher, cmd, count, port, stdout):
         return machine.exec_command(command, get_pty=True)
     return launcher
 
-def print_launch_time(launch_time, show_elapsed=False):
-    print('Info:', 'Launch :', launch_time.strftime('%Y-%m-%d %H:%M:%S'))
-    if show_elapsed:
+def print_time(launch_time, termination_time=None, show_elapsed=False):
+    print('Info:', 'Launch      :', launch_time.strftime('%Y-%m-%d %H:%M:%S'))
+    if show_elapsed or termination_time is not None:
         now = datetime.datetime.now()
-        print('Info:', 'Now    :', now.strftime('%Y-%m-%d %H:%M:%S'))
-        print('Info:', 'Elasped:', '{:.2f}'.format((now - launch_time).total_seconds()), 'seconds')
+        print('Info:', 'Now         :', now.strftime('%Y-%m-%d %H:%M:%S'))
+    if show_elapsed:
+        print('Info:', 'Elasped     :', '{:.2f}'.format((now - launch_time).total_seconds()), 'seconds')
+    if termination_time is not None:
+        print('Info:', 'Termination :', termination_time.strftime('%Y-%m-%d %H:%M:%S'))
+        print('Info:', 'left        :', '{:.2f}'.format((termination_time - now).total_seconds()), 'seconds')
 
 def main(args):
     print('Info:', args)
@@ -314,7 +322,7 @@ def main(args):
     sm = SSHManager(args.machines, args.username, args.password)
     launch_time = datetime.datetime.now()
     print('Info:')
-    print_launch_time(launch_time)
+    print_time(launch_time)
 
     if not args.admin:
         print('Info:')
@@ -338,8 +346,22 @@ def main(args):
             count_left = count_left - count_to_use
 
     print('Info:')
-    ControlPrompt(launch_time, sm, args).cmdloop()
 
+    termination_time = None
+    if args.duration is not None:
+        print('Info:', 'Will terminate in', '{:.2f}'.format(args.duration), 'seconds')
+        termination_time = datetime.datetime.now() + datetime.timedelta(seconds=args.duration)
+        print_time(launch_time, termination_time)
+        multiprocessing.Process(target=killer, args=(args.duration,), daemon=True).start()
+    
+    ControlPrompt((launch_time, termination_time), sm, args).cmdloop()
+
+
+def killer(wait_time):
+    time.sleep(wait_time)
+    print('')
+    print('Info:', 'Terminate!')
+    os.kill(os.getppid(), signal.SIGTERM)
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='super_client.py')
@@ -349,6 +371,7 @@ def parse_arguments():
     parser.add_argument('--unevenly', action='store_true', help='Stack --threshold jobs on the same machine')
     parser.add_argument('--threshold', type=int, default=500, help='Limited number of processes to launch for each machine')
     parser.add_argument('--delay', type=float, default=1.0, help='Delay interval between jobs launching on each machine')
+    parser.add_argument('--duration', type=float, default=None, help='Time in seconds to auto terminate this script')
     # Forwarded to remote_launcher
     parser.add_argument('--port', type=str, default=':1747', help='Forward to remote_launcher Server @<IP>:<PORT>')
     parser.add_argument('--cmd', type=str, default='~/ece1747/SimMud/client', help='Forward to remote_launcher --cmd')
