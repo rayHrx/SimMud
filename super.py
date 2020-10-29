@@ -61,6 +61,7 @@ class LabelMessenger():
         return (self.__quest_noquest, self.__spread_static, self.__count)
 
     def print_git_message(self):
+        print('Info:')
         print('Info:', 'Don\'t forget to git!')
         print('Info:', '    ', 'git status')
         print('Info:', '    ', 'git add .')
