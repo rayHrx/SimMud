@@ -31,6 +31,24 @@ def float_fmt(num):
     return '{:.2f}'.format(num)
 
 
+def print_load():
+    print('Info:', psutil.cpu_count(logical=False), 'physical CPUs,', psutil.cpu_count(logical=True), 'logical CPUs,', '@', float_fmt(psutil.cpu_freq().current), 'MHz')
+    print('Info:', str(psutil.cpu_percent()) + '%', 'CPU:', end=' ')
+    print(*psutil.cpu_percent(percpu=True), sep='% ', end='%\n')
+
+    if sys.platform.startswith('win'):
+        load = psutil.getloadavg()
+    else:
+        load = os.getloadavg()
+    print('Info:', 'Load:', *load)
+
+    ram = psutil.virtual_memory()
+    print('Info:', 'RAM:', sizeof_fmt(ram.used) + '/' + sizeof_fmt(ram.total), str(ram.percent) + '%')
+
+    nio = psutil.net_io_counters()
+    print('Info:', 'NET:', sizeof_fmt(nio.bytes_sent), 'Sent,', sizeof_fmt(nio.bytes_recv), 'Received,', num_fmt(nio.packets_sent), 'Packets Sent,', num_fmt(nio.packets_recv), 'Packets Received,', num_fmt(nio.errin), 'Error In,', num_fmt(nio.errout), 'Error Out')
+
+
 class ControlPrompt(cmd.Cmd):
     def __init__(self, process_manager):
         '''
@@ -100,21 +118,7 @@ class ControlPrompt(cmd.Cmd):
         return self.do_list()
 
     def do_load(self, arg):
-        print('Info:', psutil.cpu_count(logical=False), 'physical CPUs,', psutil.cpu_count(logical=True), 'logical CPUs,', '@', float_fmt(psutil.cpu_freq().current), 'MHz')
-        print('Info:', str(psutil.cpu_percent()) + '%', 'CPU:', end=' ')
-        print(*psutil.cpu_percent(percpu=True), sep='% ', end='%\n')
-
-        if sys.platform.startswith('win'):
-            load = psutil.getloadavg()
-        else:
-            load = os.getloadavg()
-        print('Info:', 'Load:', *load)
-
-        ram = psutil.virtual_memory()
-        print('Info:', 'RAM:', sizeof_fmt(ram.used) + '/' + sizeof_fmt(ram.total), str(ram.percent) + '%')
-
-        nio = psutil.net_io_counters()
-        print('Info:', 'NET:', sizeof_fmt(nio.bytes_sent), 'Sent,', sizeof_fmt(nio.bytes_recv), 'Received,', num_fmt(nio.packets_sent), 'Packets Sent,', num_fmt(nio.packets_recv), 'Packets Received,', num_fmt(nio.errin), 'Error In,', num_fmt(nio.errout), 'Error Out')
+        print_load()
 
 
 class ProcessManager:
