@@ -13,6 +13,7 @@ def init(parser):
     parser.description='draw graph based on .csv data'
     parser.add_argument('--path', type=str, required=True, help='Path to the directory of .csv files')
     parser.add_argument('--iter_num', type=int, default=100, help='Moving average window size')
+    parser.add_argument('--max_row', type=int, default=14000, help='Number of iterations of raw data to process')
     parser.add_argument('--raw', action='store_true', help='Raw data')
     parser.add_argument('--title', type=str, help='Graph title: Type - N clients, e.g. Static - 100 clients')
     parser.add_argument('--debug', action='store_true', help='Print debug messages when on')
@@ -29,7 +30,7 @@ def main(args):
     
     # read one .csv, and add its data to all subplots using the same style
     # avgs5db[thread_id][dataline][avged_point]
-    avgs5db = [utility.calculate_avg(os.path.join(args.path, thread_file), args.iter_num, args.debug, args.raw) for thread_file in server_threads]
+    avgs5db = [utility.calculate_avg(filename=os.path.join(args.path, thread_file), iter_num=args.iter_num, debug=args.debug, max_row=args.max_row, raw=args.raw) for thread_file in server_threads]
 
     if args.title is None:
         args.title = utility.genereate_run_name(*utility.parse_label_file(args.path))

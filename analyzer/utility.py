@@ -25,7 +25,7 @@ def parse_label_file(run_metric_dir):
         return row
 
 
-def calculate_avg(filename, iter_num, debug, raw=False):
+def calculate_avg(filename, iter_num, debug, max_row, raw=False):
     # compute average for each server thread
     avg = [] # (2D) [col][index]
     col_num = 0
@@ -37,7 +37,6 @@ def calculate_avg(filename, iter_num, debug, raw=False):
         iter_sum = []
         data = [] # 2D, [col][iter_num]
         data_i = 0 # index of where in data to write - 0 <= data_i < iter_num
-        max_row = 10000
 
         for row in csv_reader:
             if debug: print("row", line_num, row)
