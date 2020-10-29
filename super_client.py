@@ -339,8 +339,8 @@ def parse_arguments():
     parser.add_argument('--stdout', action='store_true', help='Forward to remote_launcher --stdout')
     # SSH-related
     parser.add_argument('--machines', type=str, nargs='+', help='Pool of machines for SSH')
-    parser.add_argument('--username', type=str, required=True, help='Username for SSH')
-    parser.add_argument('--password', type=str, required=True, help='Password for SSH')
+    parser.add_argument('--username', type=str, help='Username for SSH')
+    parser.add_argument('--password', type=str, help='Password for SSH')
     
     return parser.parse_args()
 
