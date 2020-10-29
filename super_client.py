@@ -348,7 +348,7 @@ def parse_arguments():
     parser.add_argument('--count', type=int, default=1000, help='Number of processes to deploy')
     parser.add_argument('--unevenly', action='store_true', help='Stack --threshold jobs on the same machine')
     parser.add_argument('--threshold', type=int, default=500, help='Limited number of processes to launch for each machine')
-    parser.add_argument('--delay', type=float, default=0.8, help='Delay interval between jobs launching on each machine')
+    parser.add_argument('--delay', type=float, default=1.0, help='Delay interval between jobs launching on each machine')
     # Forwarded to remote_launcher
     parser.add_argument('--port', type=str, default=':1747', help='Forward to remote_launcher Server @<IP>:<PORT>')
     parser.add_argument('--cmd', type=str, default='~/ece1747/SimMud/client', help='Forward to remote_launcher --cmd')

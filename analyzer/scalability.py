@@ -191,7 +191,7 @@ def check_data_validity(dataset):
 
     # Compute the high cutoff
     _, _, size_list = zip(*datasize_list)
-    high_cutoff = np.percentile(np.unique(size_list), 80)
+    high_cutoff = np.percentile(np.unique(size_list), 85)
     original_size = len(size_list)
 
     # Calculate the mean and std on data < high_cutoff
@@ -201,7 +201,7 @@ def check_data_validity(dataset):
     size_std = np.std(size_list)
     print('Info:', 'Data sizes have', 'mean=' + float_fmt(size_mean), 'std=' + float_fmt(size_std), 'high_cutoff=' + float_fmt(high_cutoff), '(' + str(original_size) + '->' + str(post_high_cutoff_size) + ')')
 
-    size_warning_threshold = size_mean - 1.6 * size_std
+    size_warning_threshold = size_mean - 1.5 * size_std
     warning_list = [(run_name, label, size) for run_name, label, size in datasize_list if size < size_warning_threshold]
     
     for run_name, label, size in warning_list:
