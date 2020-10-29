@@ -94,10 +94,10 @@ class SSHManager:
     
     def __del__(self):
         self.close_all()
-            
+
 
 class ControlPrompt(cmd.Cmd):
-    def __init__(self, time, ssh_manager, args):
+    def __init__(self, time, ssh_manager):
         '''
         ssh_manager is SSHManager
         time = (launch_time, termination_time=None)
@@ -106,7 +106,12 @@ class ControlPrompt(cmd.Cmd):
         super(ControlPrompt, self).__init__()
         self.__time = time
         self.__ssh_manager = ssh_manager
-        self.__args = args
+    
+    def get_time(self):
+        return self.__time
+    
+    def get_ssh_manager(self):
+        return self.__ssh_manager
 
     def do_list(self, arg=None):
         self.__ssh_manager.refresh_ioe()
@@ -142,29 +147,6 @@ class ControlPrompt(cmd.Cmd):
             print('Info:', '    ' + command)
             return machine.exec_command(command, get_pty=True)
         self.__ssh_manager.launch_task_on_machine(idx, launcher)
-        print('')
-
-    def do_launch(self, arg):
-        '''
-        Usage: launch idx <count>
-        Info:
-            1. Will launch <count> number of processes to machine idx
-        ''' 
-        arg = arg.split()
-        if len(arg) != 2:
-            print('Error:', 'Wrong number of arguments')
-            return
-
-        idx = int(arg[0])
-        count = int(arg[1])
-        
-        if not self.check_machine_existance(idx):
-            return
-
-        if self.__ssh_manager.get_ioe(idx) is not None:
-            print('Error:', self.__ssh_manager.get_machine_name_str(idx), 'is already running')
-
-        self.__ssh_manager.launch_task_on_machine(idx, construct_launcher(remote_launcher=self.__args.remote_launcher, cmd=self.__args.cmd, count=count, port=self.__args.port, stdout=self.__args.stdout))
         print('')
 
     def do_talk(self, arg):
@@ -243,6 +225,36 @@ class ControlPrompt(cmd.Cmd):
             return False
         return True
 
+
+class SuperClientControlPrompt(ControlPrompt):
+    def __init__(self, time, ssh_manager, args):
+        super(SuperClientControlPrompt, self).__init__(time, ssh_manager)
+        self.__args = args
+    
+    def do_launch(self, arg):
+        '''
+        Usage: launch idx <count>
+        Info:
+            1. Will launch <count> number of processes to machine idx
+        ''' 
+        arg = arg.split()
+        if len(arg) != 2:
+            print('Error:', 'Wrong number of arguments')
+            return
+
+        idx = int(arg[0])
+        count = int(arg[1])
+        
+        if not self.check_machine_existance(idx):
+            return
+
+        if self.get_ssh_manager().get_ioe(idx) is not None:
+            print('Error:', self.__ssh_manager.get_machine_name_str(idx), 'is already running')
+
+        self.get_ssh_manager().launch_task_on_machine(idx, construct_launcher(remote_launcher=self.__args.remote_launcher, cmd=self.__args.cmd, count=count, port=self.__args.port, stdout=self.__args.stdout))
+        print('')
+
+
 def construct_launcher(remote_launcher, cmd, count, port, stdout):
     def launcher(idx, machine, machine_name):
         command = [remote_launcher, '--cmd', cmd, '--count', count, '--port', port]
@@ -256,6 +268,7 @@ def construct_launcher(remote_launcher, cmd, count, port, stdout):
         return machine.exec_command(command, get_pty=True)
     return launcher
 
+
 def print_time(launch_time, termination_time=None, show_elapsed=False):
     print('Info:', 'Launch      :', launch_time.strftime('%Y-%m-%d %H:%M:%S'))
     if show_elapsed or termination_time is not None:
@@ -267,12 +280,10 @@ def print_time(launch_time, termination_time=None, show_elapsed=False):
         print('Info:', 'Termination :', termination_time.strftime('%Y-%m-%d %H:%M:%S'))
         print('Info:', 'left        :', '{:.2f}'.format((termination_time - now).total_seconds()), 'seconds')
 
-def main(args):
-    print('Info:', args)
-    print('Info:')
 
-    if args.machines is None:
-        args.machines = [
+def get_remote_machines(machines):
+    if machines is None:
+        machines = [
             #'ug210.eecg.utoronto.ca', 
             'ug211.eecg.utoronto.ca',
             'ug212.eecg.utoronto.ca',
@@ -305,12 +316,41 @@ def main(args):
             'ug239.eecg.utoronto.ca',
             'ug240.eecg.utoronto.ca'
             ]
-        random.shuffle(args.machines)
+        random.shuffle(machines)
+    return machines
+
+
+def launch_tasks(sshmanager, total_count, remote_launcher, remote_cmd, port, delay, stdout=False, is_unevenly=False, threshold=1000):
+    print('Info:')
+    machine_iter = itertools.cycle(range(sshmanager.get_num_machines()))
+    count_left = total_count
+    
+    if is_unevenly:
+        target_count_to_use = threshold
+        print('Info:', 'Schedule to run', target_count_to_use, 'jobs to each of the', math.ceil(count_left / target_count_to_use), 'machines')
+    else:
+        target_count_to_use = math.ceil(count_left / sshmanager.get_num_machines())
+        print('Info:', 'Schedule to run', target_count_to_use, 'jobs on every machine')
+
+    while count_left > 0:
+        machine_idx_to_run = next(machine_iter)
+        count_to_use = min(target_count_to_use, count_left)
+
+        sshmanager.launch_task_on_machine(machine_idx_to_run, construct_launcher(remote_launcher=remote_launcher, cmd=remote_cmd, count=count_to_use, port=port, stdout=stdout))
+        time.sleep(delay)
+
+        count_left = count_left - count_to_use
+
+
+def main(args):
+    print('Info:', args)
+    print('Info:')
+
+    args.machines = get_remote_machines(args.machines)
 
     if args.admin:
         print('Info:', 'Running in admin mode')
-    
-    if not args.admin:
+    else:
         print('Info:', 'Runing a total of', args.count, 'processes')
         required_machines_count = (int((args.count - 1) / args.threshold) + 1)
         if required_machines_count > len(args.machines):
@@ -320,48 +360,30 @@ def main(args):
             exit(0)
 
     sm = SSHManager(args.machines, args.username, args.password)
-    launch_time = datetime.datetime.now()
     print('Info:')
+    launch_time = datetime.datetime.now()
     print_time(launch_time)
 
     if not args.admin:
-        print('Info:')
-        machine_iter = itertools.cycle(range(sm.get_num_machines()))
-        count_left = args.count
-        
-        if args.unevenly:
-            target_count_to_use = args.threshold
-            print('Info:', 'Schedule to run', target_count_to_use, 'jobs to each of the', math.ceil(args.count / target_count_to_use), 'machines')
-        else:
-            target_count_to_use = math.ceil(count_left / sm.get_num_machines())
-            print('Info:', 'Schedule to run', target_count_to_use, 'jobs on every machine')
-
-        while count_left > 0:
-            machine_idx_to_run = next(machine_iter)
-            count_to_use = min(target_count_to_use, count_left)
-
-            sm.launch_task_on_machine(machine_idx_to_run, construct_launcher(remote_launcher=args.remote_launcher, cmd=args.cmd, count=count_to_use, port=args.port, stdout=args.stdout))
-            time.sleep(args.delay)
-
-            count_left = count_left - count_to_use
-
+        launch_tasks(sshmanager=sm, total_count=args.count, remote_launcher=args.remote_launcher, remote_cmd=args.cmd, port=args.port, delay=args.delay, stdout=args.stdout, is_unevenly=args.unevenly, threshold=args.threshold)
+    
     print('Info:')
-
     termination_time = None
     if args.duration is not None:
         print('Info:', 'Will terminate in', '{:.2f}'.format(args.duration), 'seconds')
         termination_time = datetime.datetime.now() + datetime.timedelta(seconds=args.duration)
         print_time(launch_time, termination_time)
-        multiprocessing.Process(target=killer, args=(args.duration,), daemon=True).start()
+        multiprocessing.Process(target=killer_process, args=(args.duration,), daemon=True).start()
     
-    ControlPrompt((launch_time, termination_time), sm, args).cmdloop()
+    SuperClientControlPrompt((launch_time, termination_time), sm, args).cmdloop()
 
 
-def killer(wait_time):
+def killer_process(wait_time):
     time.sleep(wait_time)
     print('')
     print('Info:', 'Terminate!')
     os.kill(os.getppid(), signal.SIGTERM)
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='super_client.py')
