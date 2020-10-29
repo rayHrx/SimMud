@@ -294,7 +294,8 @@ def main(args):
             'ug236.eecg.utoronto.ca',
             'ug237.eecg.utoronto.ca',
             'ug238.eecg.utoronto.ca',
-            'ug239.eecg.utoronto.ca'
+            'ug239.eecg.utoronto.ca',
+            'ug240.eecg.utoronto.ca'
             ]
         random.shuffle(args.machines)
 
@@ -320,12 +321,12 @@ def main(args):
         machine_iter = itertools.cycle(range(sm.get_num_machines()))
         count_left = args.count
         
-        if args.evenly:
-            target_count_to_use = math.ceil(count_left / sm.get_num_machines())
-            print('Info:', 'Schedule to run', target_count_to_use, 'jobs on every machine')
-        else:
+        if args.unevenly:
             target_count_to_use = args.threshold
             print('Info:', 'Schedule to run', target_count_to_use, 'jobs to each of the', math.ceil(args.count / target_count_to_use), 'machines')
+        else:
+            target_count_to_use = math.ceil(count_left / sm.get_num_machines())
+            print('Info:', 'Schedule to run', target_count_to_use, 'jobs on every machine')
 
         while count_left > 0:
             machine_idx_to_run = next(machine_iter)
@@ -345,7 +346,7 @@ def parse_arguments():
     parser.add_argument('--admin', action='store_true', help='SSH to all the machines, but without executing any commands')
     parser.add_argument('--remote_launcher', type=str, default='~/ece1747/SimMud/run_client.py', help='Location of remoate_launcher in remote location, aka, run_client.py')
     parser.add_argument('--count', type=int, default=1000, help='Number of processes to deploy')
-    parser.add_argument('--evenly', action='store_true', help='Evenly distribute jobs onto machines, still limited by --threshold')
+    parser.add_argument('--unevenly', action='store_true', help='Stack --threshold jobs on the same machine')
     parser.add_argument('--threshold', type=int, default=500, help='Limited number of processes to launch for each machine')
     parser.add_argument('--delay', type=float, default=0.5, help='Delay interval between jobs launching on each machine')
     # Forwarded to remote_launcher
