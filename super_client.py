@@ -264,7 +264,7 @@ def main(args):
 
     if args.machines is None:
         args.machines = [
-            'ug210.eecg.utoronto.ca', 
+            #'ug210.eecg.utoronto.ca', 
             'ug211.eecg.utoronto.ca',
             'ug212.eecg.utoronto.ca',
             'ug213.eecg.utoronto.ca', 
