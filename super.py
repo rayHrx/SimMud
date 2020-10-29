@@ -76,7 +76,9 @@ def main(args):
 
     def server_launcher(_):
         print('Info:', 'Launching server process')
-        return subprocess.Popen([os.path.join(args.current_dir, 'server'), config_path, args.port], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        cmd = [os.path.join(args.current_dir, 'server'), config_path, args.port]
+        print('Info:', '    ', ' '.join(cmd))
+        return subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     spm = ServerProcessManager(server_launcher)
     spm.launch_process()
     time.sleep(5 * args.delay)
