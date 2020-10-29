@@ -18,7 +18,7 @@ class SSHManager:
     def __init__(self, machines, username, password):
         def connect_client(machine, username, password):
             client = paramiko.SSHClient()
-            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            #client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             try:
                 if username is None or password is None:
                     client.connect(machine)
