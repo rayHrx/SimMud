@@ -39,8 +39,9 @@ class ServerProcessManager(run_client.ProcessManager):
     def stop_process(self, idx):
         assert idx < len(self.get_processes())
         assert self.get_processes()[idx] is not None
-        print('Info:', '    Stopping server')
+        print('Info:', '    Stopping server:', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'))
         outs, errs = self.get_processes()[idx].communicate(input=bytes('q\n', 'ascii'))
+        print('Info:', '    Stopped server:', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'))
         if outs:
             for line in outs.decode('utf-8').splitlines():
                 print('Server STDOUT:', '    ', line)
@@ -74,8 +75,6 @@ class LabelMessenger():
         print('Info:')
 
     def __del__(self):
-        print('Info:')
-        print('Info:', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         self.print_git_message()
 
 
@@ -115,6 +114,13 @@ def get_server_config(path, quest, noquest, spread, static):
         return None
 
 
+allowed_server_host = [
+    'ug205', 'ug206', 'ug207', 'ug208', 'ug209',
+    'ug178', 'ug177', 'ug176', 'ug175', 'ug174',
+    'ug173', 'ug172', 'ug171', 'ug170', 'ug169',
+    'ug168', 'ug167', 'ug166']
+
+
 def main(args):
     # print('Info:', args)
     print('Info:')
@@ -122,7 +128,6 @@ def main(args):
     cur_host_name = socket.gethostname()
     print('Info:', '@' + cur_host_name)
     if not args.disable_server_check:
-        allowed_server_host = ['ug205', 'ug206', 'ug207', 'ug208', 'ug209', 'ug178', 'ug177', 'ug176', 'ug175', 'ug174', 'ug173', 'ug172', 'ug171', 'ug170', 'ug169']
         if cur_host_name not in allowed_server_host:
             print('Error:', 'Current server host', '@' + cur_host_name, 'is not allowed')
             print('Error:', '    ', 'List of allowed server hosts:', allowed_server_host)
