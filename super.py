@@ -74,6 +74,8 @@ class LabelMessenger():
         print('Info:')
 
     def __del__(self):
+        print('Info:')
+        print('Info:', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         self.print_git_message()
 
 
