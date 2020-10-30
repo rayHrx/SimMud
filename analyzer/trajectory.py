@@ -35,7 +35,7 @@ def main(args):
     show_fig(args.gui, args.output, args.title, avgs5db)
 
 
-def show_fig(gui, output, figtitle, avgs5db, figname=None, figsize=(24,12)):
+def show_fig(gui, output, figtitle, avgs5db, figname=None, figsize=(16, 8)):
     fig = plt.figure(figname, figsize=figsize)
     suptitle = figtitle.split('_')
     suptitle = ' '.join(suptitle)
@@ -61,6 +61,8 @@ def show_fig(gui, output, figtitle, avgs5db, figname=None, figsize=(24,12)):
         # avg (2D) - [col] [avg index]
         for i in range(len(avg)):
             subfig[pos[i]].plot(avg[i], style[num])
+
+    plt.tight_layout()
 
     if output:
         filename = os.path.join(output, figtitle)
