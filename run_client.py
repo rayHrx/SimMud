@@ -3,6 +3,7 @@
 import argparse
 import cmd
 import os
+import socket
 import subprocess
 import sys
 
@@ -32,6 +33,7 @@ def float_fmt(num):
 
 
 def print_load():
+    print('Info:', cur_host_name = socket.gethostname())
     print('Info:', psutil.cpu_count(logical=False), 'physical CPUs,', psutil.cpu_count(logical=True), 'logical CPUs,', '@', float_fmt(psutil.cpu_freq().current), 'MHz')
     print('Info:', str(psutil.cpu_percent()) + '%', 'CPU:', end=' ')
     print(*psutil.cpu_percent(percpu=True), sep='% ', end='%\n')
