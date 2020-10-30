@@ -122,7 +122,7 @@ def main(args):
     cur_host_name = socket.gethostname()
     print('Info:', '@' + cur_host_name)
     if not args.disable_server_check:
-        allowed_server_host = ['ug205', 'ug206', 'ug207', 'ug208', 'ug209']
+        allowed_server_host = ['ug205', 'ug206', 'ug207', 'ug208', 'ug209', 'ug178', 'ug177', 'ug176', 'ug175', 'ug174', 'ug173', 'ug172', 'ug171', 'ug170', 'ug169']
         if cur_host_name not in allowed_server_host:
             print('Error:', 'Current server host', '@' + cur_host_name, 'is not allowed')
             print('Error:', '    ', 'List of allowed server hosts:', allowed_server_host)
