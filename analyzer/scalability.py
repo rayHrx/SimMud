@@ -27,6 +27,9 @@ def float_fmt(num):
 def init(parser):
     parser.description='Plot # client vs update interval with and without quest for spread and static'
     parser.add_argument('--path', type=str, default='./metrics', help='Path to the metrics directory')
+    black_white_group = parser.add_mutually_exclusive_group(required=False)
+    black_white_group.add_argument('--whitelist', type=str, nargs='+', help='List of groups to include. Check comma separated group_strs inside group.txt')
+    black_white_group.add_argument('--blacklist', type=str, nargs='+', help='List of groups to exclude. Check comma separated group_strs inside group.txt')
     arguments.load_argument(parser)
 
 
@@ -147,6 +150,41 @@ def parse_run_metric(run_name, args):
 
     run_metric_dir = os.path.join(args.path, run_name)
 
+    # Check for whitelist and blacklist
+    def check_white(group_strs, whitelist):
+        '''
+        True if should include
+        '''
+        for white_group in whitelist:
+            if white_group in group_strs:
+                return True
+        return False
+
+    def check_black(group_strs, blacklist):
+        '''
+        True if should include
+        '''
+        for black_group in blacklist:
+            if black_group in group_strs:
+                return False
+        return True
+
+    if args.whitelist or args.blacklist:
+        group_strs = utility.parse_group_file(run_metric_dir)
+        if args.whitelist:
+            if group_strs:
+                if not check_white(group_strs, args.whitelist):
+                    print('Info:', run_name, 'is ignored due to --whitelist')
+                    return None
+            else:
+                print('Info:', run_name, 'is ignored due to --whitelist')
+                return None
+        if args.blacklist:
+            if group_strs:
+                if not check_black(group_strs, args.blacklist):
+                    print('Info:', run_name, 'is ignored due to --blacklist')
+                    return None
+
     # Label file
     label_data = utility.parse_label_file(run_metric_dir)
     if label_data is None:
@@ -186,13 +224,19 @@ def check_data_validity(dataset):
     datasize_list = [(run_name, (static_spread, quest_noquest, nclient), max(map(lambda perthread: len(perthread[4]), avgs5db))) for _, static_spread, quest_noquest, nclient, run_name, avgs5db in dataset]
     datasize_list.sort(key=lambda p: p[2])
 
+    if len(datasize_list) == 0:
+        return
+
     # Compute the high cutoff
     _, _, size_list = zip(*datasize_list)
     high_cutoff = np.percentile(np.unique(size_list), 85)
     original_size = len(size_list)
 
     # Calculate the mean and std on data < high_cutoff
-    _, _, size_list = zip(*filter(lambda t: t[2] < high_cutoff, datasize_list))
+    cutoffed_size_list = list(filter(lambda t: t[2] < high_cutoff, datasize_list))
+    if len(cutoffed_size_list) == 0:
+        return
+    _, _, size_list = zip(*cutoffed_size_list)
     post_high_cutoff_size = len(size_list)
     size_mean = np.mean(size_list)
     size_std = np.std(size_list)

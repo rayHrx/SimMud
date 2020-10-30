@@ -25,6 +25,24 @@ def parse_label_file(run_metric_dir):
         return row
 
 
+def parse_group_file(run_metric_dir):
+    '''
+    [group_str] or None
+    '''
+    group_file_name = 'group.txt'
+    group_file_path = os.path.join(run_metric_dir, group_file_name)
+
+    if not os.path.isfile(group_file_path):
+        return None
+
+    with open(group_file_path, mode='r') as f:
+        csv_reader = csv.reader(f, delimiter=',')
+        row = next(iter(csv_reader))
+        if len(row) == 0:
+            return None
+        return row
+
+
 def calculate_avg(filename, iter_num, debug, max_row, raw=False):
     # compute average for each server thread
     avg = [] # (2D) [col][index]
