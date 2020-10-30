@@ -28,8 +28,8 @@ def init(parser):
     parser.description='Plot # client vs update interval with and without quest for spread and static'
     parser.add_argument('--path', type=str, default='./metrics', help='Path to the metrics directory')
     black_white_group = parser.add_mutually_exclusive_group(required=False)
-    black_white_group.add_argument('--whitelist', type=str, nargs='+', help='List of groups to include')
-    black_white_group.add_argument('--blacklist', type=str, nargs='+', help='List of groups to exclude')
+    black_white_group.add_argument('--whitelist', type=str, nargs='+', help='List of groups to include. Check comma separated group_strs inside group.txt')
+    black_white_group.add_argument('--blacklist', type=str, nargs='+', help='List of groups to exclude. Check comma separated group_strs inside group.txt')
     arguments.load_argument(parser)
 
 
