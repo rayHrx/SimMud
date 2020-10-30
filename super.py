@@ -118,7 +118,8 @@ allowed_server_host = [
     'ug205', 'ug206', 'ug207', 'ug208', 'ug209',
     'ug178', 'ug177', 'ug176', 'ug175', 'ug174',
     'ug173', 'ug172', 'ug171', 'ug170', 'ug169',
-    'ug168', 'ug167', 'ug166']
+    'ug168', 'ug167', 'ug166', 'ug165', 'ug164',
+    'ug163']
 
 
 def main(args):
