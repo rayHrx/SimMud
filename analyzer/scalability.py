@@ -15,6 +15,7 @@ try:
 except:
     print('Please pip install numpy')
 
+import arguments
 import trajectory
 import utility
 
@@ -26,11 +27,7 @@ def float_fmt(num):
 def init(parser):
     parser.description='Plot # client vs update interval with and without quest for spread and static'
     parser.add_argument('--path', type=str, default='./metrics', help='Path to the metrics directory')
-    parser.add_argument('--iter_num', type=int, default=100, help='Moving average window size')
-    parser.add_argument('--max_row', type=int, default=10000, help='Number of iterations of raw data to process')
-    parser.add_argument('--debug', action='store_true', help='Print debug messages when on')
-    parser.add_argument('--gui', action='store_true', help='Open charts on GUI')
-    parser.add_argument('--output', type=str, help='Location to dump chart')
+    arguments.load_argument(parser)
 
 
 def main(args):
