@@ -280,7 +280,6 @@ void WorldMap::balance_spread()
 		}
 	}
 
-	// Sort increasing
 	std::sort(all_regions.begin(), all_regions.end(), [](Region* a, Region* b){
 		return a->players.size() < b->players.size();	
 	});
@@ -302,11 +301,6 @@ void WorldMap::balance_spread()
 		}		
 		bins[lightest_layout] += heaviest_region->players.size();
 	}
-
-	//std::for_each(std::rbegin(bins), std::rend(bins), [](auto const& value) {
-    	//	printf("%d \n", value);
-	//});
-	//printf("================ \n");
 
 	return;
 }
